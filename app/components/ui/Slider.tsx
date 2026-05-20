@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { cn } from "@/frontend/web/lib/utils";
+import { cn } from "@/app/lib/utils";
 
 interface SliderProps {
   min: number;

@@ -37,7 +37,7 @@ import {
   Clock,
   Zap,
 } from "lucide-react";
-import { cn } from "@/frontend/web/lib/utils";
+import { cn } from "@/app/lib/utils";
 import { useMemo } from "react";
 
 interface NavItem {

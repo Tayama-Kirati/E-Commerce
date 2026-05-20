@@ -26,7 +26,7 @@ import {
   Zap,
   Leaf,
 } from "lucide-react";
-import { cn, formatPrice, timeAgo } from "@/frontend/web/lib/utils";
+import { cn, formatPrice, timeAgo } from "@/app/lib/utils";
 import { toast } from "react-hot-toast";
 
 // ─── Order Detail Page ────────────────────────────────────────────────────

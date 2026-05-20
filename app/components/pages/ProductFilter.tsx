@@ -3,9 +3,9 @@
 import React from "react";
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import { Star } from "lucide-react";
-import { cn } from "@/frontend/web/lib/utils";
-import { Slider } from "@/frontend/web/components/ui/Slider";
-import { Checkbox } from "@/frontend/web/components/ui/Checkbox";
+import { cn } from "@/app/lib/utils";
+import { Slider } from "@/app/components/ui/Slider";
+import { Checkbox } from "@/app/components/ui/Checkbox";
 
 interface FilterState {
   minPrice: number;

@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
-import { authOptions } from "@/frontend/web/lib/auth";
-import { prisma } from "@/frontend/web/lib/prisma";
-import { redis } from "@/frontend/web/lib/redis";
+import { authOptions } from "@/app/lib/auth";
+import { prisma } from "@/app/lib/prisma";
+import { redis } from "@/app/lib/redis";
 import { z } from "zod";
 
-// ─── GET /api/products ────────────────────────────────────────────────────────
+// ─── GET /api/products  
 
 export async function GET(req: NextRequest) {
   try {

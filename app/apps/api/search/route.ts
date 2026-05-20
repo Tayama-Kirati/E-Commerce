@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { prisma } from "@/frontend/web/lib/prisma";
-import { redis } from "@/frontend/web/lib/redis";
+import { prisma } from "@/app/lib/prisma";
+import { redis } from "@/app/lib/redis";
 
 const SearchQuerySchema = z.object({
   q: z.string().min(1).max(200),

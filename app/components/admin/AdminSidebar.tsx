@@ -30,7 +30,7 @@ import {
   TrendingUp,
   CheckCircle,
 } from "lucide-react";
-import { cn } from "@/frontend/web/lib/utils";
+import { cn } from "@/app/lib/utils";
 
 interface NavItem {
   id: string;

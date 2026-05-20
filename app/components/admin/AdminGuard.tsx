@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { getServerSession } from "next-auth";
-import { authOptions } from "@/frontend/web/lib/auth";
+import { authOptions } from "@/app/lib/auth";
 
 export async function AdminGuard({ children }: { children: React.ReactNode }) {
   const session = await getServerSession(authOptions);

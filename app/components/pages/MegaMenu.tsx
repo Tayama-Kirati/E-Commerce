@@ -18,7 +18,7 @@ import {
   TrendingUp,
   ChevronRight,
 } from "lucide-react";
-import { cn } from "@/frontend/web/lib/utils";
+import { cn } from "@/app/lib/utils";
 
 const MEGA_CATEGORIES = [
   {

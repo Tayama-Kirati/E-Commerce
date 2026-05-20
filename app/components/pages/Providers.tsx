@@ -6,7 +6,7 @@ import type { ReactNode }  from "react";
 
 export function Providers({ children }: { children: ReactNode }) {
   return (
-    <SessionProvider refetchInterval={5 * 60} refetchOnWindowFocus>
+    <SessionProvider basePath="/apps/api/auth" refetchInterval={5 * 60} refetchOnWindowFocus>
       <ThemeProvider>
         {children}
       </ThemeProvider>
