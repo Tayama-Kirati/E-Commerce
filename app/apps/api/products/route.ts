@@ -39,7 +39,17 @@ export async function GET(req: NextRequest) {
         { tags: { some: { tag: { contains: search, mode: "insensitive" } } } },
       ];
     }
-    if (category) where.category = { slug: category };
+    if (category) {
+      // Include products from the category AND all its subcategories
+      const cat = await prisma.category.findUnique({
+        where: { slug: category },
+        include: { children: { select: { id: true } } },
+      });
+      if (cat) {
+        const ids = [cat.id, ...cat.children.map((c) => c.id)];
+        where.categoryId = { in: ids };
+      }
+    }
     if (minPrice !== undefined || maxPrice !== undefined) {
       where.basePrice = {};
       if (minPrice !== undefined) where.basePrice.gte = minPrice;
@@ -120,7 +130,7 @@ export async function GET(req: NextRequest) {
 
 const CreateProductSchema = z.object({
   name: z.string().min(3).max(300),
-  categoryId: z.string().cuid(),
+  categoryId: z.string().min(1),
   shortDesc: z.string().max(500).optional(),
   description: z.string().min(10),
   basePrice: z.number().positive(),
@@ -130,7 +140,7 @@ const CreateProductSchema = z.object({
   isEco: z.boolean().default(false),
   isFeatured: z.boolean().default(false),
   isFlashSale: z.boolean().default(false),
-  flashSaleEndsAt: z.string().datetime().nullable().optional(),
+  flashSaleEndsAt: z.string().nullable().optional(),
   freeShipping: z.boolean().default(false),
   tags: z.array(z.string()).default([]),
 });

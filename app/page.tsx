@@ -7,11 +7,12 @@ import {
 } from "@/app/lib/store";
 
 // Layout
-import { Navbar }       from "@/app/components/pages/Navbar";
-import { CartSidebar }  from "@/app/components/pages/CartSidebar";
-import { NotifPanel }   from "@/app/components/pages/NotifPanel";
-import { Footer }       from "@/app/components/pages/Footer";
-import { ToastMessage } from "@/app/components/pages/ToastMessage";
+import { Navbar }          from "@/app/components/pages/Navbar";
+import { CategorySidebar } from "@/app/components/pages/CategorySidebar";
+import { CartSidebar }     from "@/app/components/pages/CartSidebar";
+import { NotifPanel }      from "@/app/components/pages/NotifPanel";
+import { Footer }          from "@/app/components/pages/Footer";
+import { ToastMessage }    from "@/app/components/pages/ToastMessage";
 
 // Pages
 import { HomePage }          from "@/app/components/pages/HomePage";
@@ -31,10 +32,18 @@ import { SellerDashPage }    from "@/app/components/pages/SellerDashPage";
 import { SellerOnboardPage } from "@/app/components/pages/SellerOnboardPage";
 import { AdminPage }         from "@/app/components/pages/AdminPage";
 import { RoleSelectPage }    from "@/app/components/pages/RoleSelectPage";
+import { CustomerCarePage }  from "@/app/components/pages/CustomerCarePage";
+import { AboutUsPage }       from "@/app/components/pages/AboutUsPage";
+import { MyReviewsPage }     from "@/app/components/pages/MyReviewsPage";
+import { MyReturnsPage }     from "@/app/components/pages/MyReturnsPage";
 
 
 export default function App() {
-  const [user,          setUser]       = useState<User | null>(null);
+  const [user,          setUser]       = useState<User | null>(() => {
+    if (typeof window === "undefined") return null;
+    try { const s = localStorage.getItem("peanut_user"); return s ? JSON.parse(s) : null; }
+    catch { return null; }
+  });
   const [cartItems,     setCartItems]  = useState<CartItem[]>([]);
   const [cartOpen,      setCartOpen]   = useState(false);
   const [cartSyncing,   setCartSyncing]= useState(false);
@@ -154,6 +163,11 @@ export default function App() {
     ids: wishIds, toggle: toggleWishlist, isIn: isInWishlist,
   }), [wishIds, toggleWishlist, isInWishlist]);
 
+  useEffect(() => {
+    if (user) localStorage.setItem("peanut_user", JSON.stringify(user));
+    else localStorage.removeItem("peanut_user");
+  }, [user]);
+
   useEffect(() => { document.documentElement.classList.toggle("dark", darkMode); }, [darkMode]);
 
   return (
@@ -166,25 +180,32 @@ export default function App() {
               <CartSidebar />
               <NotifPanel />
               <ToastMessage />
-              <main>
-                {page === "home"       && <HomePage />}
-                {page === "products"   && <ProductsPage />}
-                {page === "product"    && <ProductDetailPage />}
-                {page === "cart"       && <CartPage />}
-                {page === "checkout"   && <CheckoutPage />}
-                {page === "orders"     && <OrdersPage />}
-                {page === "order"      && <OrderDetailPage />}
-                {page === "track"      && <TrackPage />}
-                {page === "role-select" && <RoleSelectPage />}
-                {page === "login"      && <LoginPage />}
-                {page === "register"   && <RegisterPage />}
-                {page === "forgot"     && <ForgotPage />}
-                {page === "profile"    && <ProfilePage />}
-                {page === "wishlist"   && <WishlistPage />}
-                {page === "seller"     && <SellerDashPage />}
-                {page === "onboarding" && <SellerOnboardPage />}
-                {page === "admin"      && <AdminPage />}
-              </main>
+              <div className="flex">
+                <CategorySidebar />
+                <main className="flex-1 min-w-0">
+                  {page === "home"       && <HomePage />}
+                  {page === "products"   && <ProductsPage />}
+                  {page === "product"    && <ProductDetailPage />}
+                  {page === "cart"       && <CartPage />}
+                  {page === "checkout"   && <CheckoutPage />}
+                  {page === "orders"     && <OrdersPage />}
+                  {page === "order"      && <OrderDetailPage />}
+                  {page === "track"      && <TrackPage />}
+                  {page === "role-select" && <RoleSelectPage />}
+                  {page === "login"      && <LoginPage />}
+                  {page === "register"   && <RegisterPage />}
+                  {page === "forgot"     && <ForgotPage />}
+                  {page === "profile"    && <ProfilePage />}
+                  {page === "wishlist"   && <WishlistPage />}
+                  {page === "seller"     && <SellerDashPage />}
+                  {page === "onboarding" && <SellerOnboardPage />}
+                  {page === "admin"         && <AdminPage />}
+                  {page === "customer-care" && <CustomerCarePage />}
+                  {page === "about"         && <AboutUsPage />}
+                  {page === "reviews"       && <MyReviewsPage />}
+                  {page === "returns"       && <MyReturnsPage />}
+                </main>
+              </div>
               <Footer />
             </div>
           </WishCtx.Provider>

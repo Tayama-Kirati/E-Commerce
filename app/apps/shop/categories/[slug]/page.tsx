@@ -13,6 +13,7 @@ type Product = {
  comparePrice?: number;
  averageRating: number;
  images: { url: string; alt?: string }[];
+ category?: { id: string; name: string; slug: string };
 };
 
 export default function CategoryPage() {
@@ -24,11 +25,11 @@ export default function CategoryPage() {
 
  useEffect(() => {
  if (!slug) return;
- fetch(`/api/products?categorySlug=${slug}&limit=24`)
+ fetch(`/api/products?category=${slug}&limit=24`)
  .then((r) => r.json())
  .then((d) => {
  setProducts(d.products ?? []);
- setCategoryName(d.category?.name ?? slug);
+ setCategoryName(d.products?.[0]?.category?.name ?? slug);
  setLoading(false);
  })
  .catch(() => setLoading(false));

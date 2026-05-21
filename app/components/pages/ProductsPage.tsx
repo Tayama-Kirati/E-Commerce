@@ -1,6 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
-import { cn, formatPrice, MOCK_PRODUCTS, MOCK_CATEGORIES, useUIStore, useDebounce, apiGet, useCartStore, useWishlistStore } from "@/app/lib/store";
+import Image from "next/image";
+import { formatPrice, MOCK_PRODUCTS, useUIStore, useDebounce, apiGet, useCartStore, useWishlistStore } from "@/app/lib/store";
 import { ProductCard } from "./ProductCard";
 
 const GOLD     = "#C68313";
@@ -71,9 +72,19 @@ function ProductListCard({ product: p }: { product: any }) {
         style={{ backgroundColor: IVORY }}
         onClick={() => nav("product", p.slug)}
       >
-        <div className="w-full h-full flex items-center justify-center text-5xl transition-transform duration-500 group-hover:scale-105">
-          {p.emoji ?? "🛍️"}
-        </div>
+        {p.images?.[0]?.url ? (
+          <Image
+            src={p.images[0].url}
+            alt={p.images[0].alt ?? p.name}
+            fill
+            sizes="144px"
+            className="object-cover transition-transform duration-500 group-hover:scale-105"
+          />
+        ) : (
+          <div className="w-full h-full flex items-center justify-center text-5xl transition-transform duration-500 group-hover:scale-105">
+            🛍️
+          </div>
+        )}
         {disc > 0 && (
           <span className="absolute top-2 left-2 text-[10px] font-black px-2 py-0.5 rounded-full text-white"
             style={{ backgroundColor: "#1C1A16" }}>
@@ -175,49 +186,65 @@ function ProductListCard({ product: p }: { product: any }) {
 }
 
 export function ProductsPage() {
- const { searchQuery } = useUIStore();
+ const { searchQuery, pageData } = useUIStore();
  const [products, setProducts] = useState<any[]>(MOCK_PRODUCTS);
+ const [categories, setCategories] = useState<any[]>([]);
  const [loading, setLoading] = useState(false);
  const [sort, setSort] = useState("newest");
- const [catFilt, setCatFilt] = useState<string[]>([]);
+ const [catSlug, setCatSlug] = useState<string>("");
+ const [flashSale, setFlashSale] = useState(false);
  const [maxPrice, setMaxPrice] = useState(300000);
  const [minRating, setMinRating] = useState(0);
  const [inStock, setInStock] = useState(false);
  const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
  const dSearch = useDebounce(searchQuery, 400);
 
+ // Apply category / flashSale passed from navbar nav()
  useEffect(() => {
- setLoading(true);
- const p = new URLSearchParams({ limit: "50", sort });
- if (dSearch) p.set("search", dSearch);
- apiGet(`/api/products?${p}`, null)
- .then((d) => { if (d?.products?.length) setProducts(d.products); setLoading(false); })
- .catch(() => setLoading(false));
- }, [sort, dSearch]);
+   if (pageData?.category) setCatSlug(pageData.category);
+   if (pageData?.flashSale) setFlashSale(true);
+ }, [pageData]);
 
+ // Load real categories from API
+ useEffect(() => {
+   apiGet("/api/categories", null).then((d) => {
+     if (d?.categories) setCategories(d.categories);
+   });
+ }, []);
+
+ // Fetch products — pass category + flashSale to API so filter is server-side
+ useEffect(() => {
+   setLoading(true);
+   const p = new URLSearchParams({ limit: "50", sort });
+   if (dSearch) p.set("search", dSearch);
+   if (catSlug) p.set("category", catSlug);
+   if (flashSale) p.set("flashSale", "true");
+   apiGet(`/api/products?${p}`, null)
+     .then((d) => { setProducts(d?.products ?? MOCK_PRODUCTS); setLoading(false); })
+     .catch(() => setLoading(false));
+ }, [sort, dSearch, catSlug, flashSale]);
+
+ // Client-side filters: price, rating, stock only
  const filtered = products.filter((p) => {
- const price = Number(p.basePrice ?? p.price ?? 0);
- if (price > maxPrice) return false;
- if ((p.rating ?? p.averageRating ?? 0) < minRating) return false;
- if (catFilt.length > 0 && !catFilt.includes(p.category?.id)) return false;
- if (inStock && (p.stock ?? 1) <= 0) return false;
- return true;
+   const price = Number(p.basePrice ?? p.price ?? 0);
+   if (price > maxPrice) return false;
+   if ((p.rating ?? p.averageRating ?? 0) < minRating) return false;
+   if (inStock && (p.stock ?? 1) <= 0) return false;
+   return true;
  });
 
- const toggleCat = (id: string) =>
- setCatFilt((prev) => prev.includes(id) ? prev.filter((c) => c !== id) : [...prev, id]);
-
  const activeFilters = [
- ...catFilt.map((id) => ({
- key: `cat-${id}`,
- label: MOCK_CATEGORIES.find((c) => c.id === id)?.name ?? id,
- clear: () => setCatFilt((p) => p.filter((c) => c !== id)),
- })),
- ...(minRating > 0 ? [{ key: "rating", label: `${minRating}+ Stars`, clear: () => setMinRating(0) }] : []),
- ...(inStock ? [{ key: "stock", label: "In Stock", clear: () => setInStock(false) }] : []),
+   ...(catSlug ? [{
+     key: `cat-${catSlug}`,
+     label: categories.find((c) => c.slug === catSlug)?.name ?? catSlug,
+     clear: () => setCatSlug(""),
+   }] : []),
+   ...(flashSale ? [{ key: "flash", label: "Flash Sale", clear: () => setFlashSale(false) }] : []),
+   ...(minRating > 0 ? [{ key: "rating", label: `${minRating}+ Stars`, clear: () => setMinRating(0) }] : []),
+   ...(inStock ? [{ key: "stock", label: "In Stock", clear: () => setInStock(false) }] : []),
  ];
 
- const clearAll = () => { setCatFilt([]); setMinRating(0); setInStock(false); setMaxPrice(300000); };
+ const clearAll = () => { setCatSlug(""); setFlashSale(false); setMinRating(0); setInStock(false); setMaxPrice(300000); };
 
  return (
  <div className="max-w-7xl mx-auto px-4 py-8">
@@ -226,33 +253,6 @@ export function ProductsPage() {
  {/* Sidebar */}
  <aside className="lg:w-52 shrink-0">
  <h3 className="font-black text-gray-900 dark:text-white text-base mb-6">Filter Options</h3>
-
- {/* By Categories */}
- <div className="mb-5">
- <p className="text-sm font-bold text-gray-900 dark:text-white mb-3">By Categories</p>
- <div className="space-y-2.5">
- {MOCK_CATEGORIES.map((c) => (
- <label key={c.id} className="flex items-center gap-2.5 cursor-pointer group">
- <input
- type="checkbox"
- checked={catFilt.includes(c.id)}
- onChange={() => toggleCat(c.id)}
- className="w-4 h-4 rounded cursor-pointer accent-[#C68313]"
- />
- <span className={cn(
- "text-sm transition-colors",
- catFilt.includes(c.id)
- ? "font-semibold text-[#C68313]"
- : "text-gray-600 dark:text-gray-400 group-hover:text-[#C68313]",
- )}>
- {c.name}
- </span>
- </label>
- ))}
- </div>
- </div>
-
- <div className="border-t border-gray-200 dark:border-gray-700 my-4" />
 
  {/* Price */}
  <div className="mb-5">

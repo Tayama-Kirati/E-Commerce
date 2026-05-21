@@ -6,7 +6,6 @@ import { ProductCard } from "./ProductCard";
 const GOLD     = "#C68313";
 const CHARCOAL = "var(--color-heading)";
 const BORDER   = "#E8D5A8";
-const MUTED    = "var(--color-muted)";
 const IVORY    = "var(--color-surface-warm)";
 
 export function HomePage() {
@@ -165,24 +164,6 @@ export function HomePage() {
         </div>
       </section>
 
-      {/* Trust badges */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        {[
-          { icon: "🛡️", t: "Buyer Protection",  s: "100% safe shopping"     },
-          { icon: "🚚", t: "Fast Delivery",      s: "2-3 days nationwide"    },
-          { icon: "↩️", t: "Easy Returns",       s: "7-day hassle-free"      },
-          { icon: "💳", t: "Secure Payment",     s: "Khalti, eSewa & more"   },
-        ].map(item => (
-          <div key={item.t} className="flex items-center gap-3 bg-white rounded-2xl p-4"
-            style={{ border: `1px solid ${BORDER}` }}>
-            <span className="text-2xl shrink-0">{item.icon}</span>
-            <div>
-              <p className="text-sm font-bold" style={{ color: CHARCOAL }}>{item.t}</p>
-              <p className="text-xs" style={{ color: MUTED }}>{item.s}</p>
-            </div>
-          </div>
-        ))}
-      </div>
 
     </div>
   );

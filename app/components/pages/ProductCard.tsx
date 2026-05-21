@@ -1,4 +1,5 @@
 "use client";
+import Image from "next/image";
 import { formatPrice, useCartStore, useUIStore, useWishlistStore } from "@/app/lib/store";
 
 const GOLD     = "#C68313";
@@ -65,10 +66,20 @@ export function ProductCard({ product: p }: { product: any }) {
       <div className="relative w-full aspect-square bg-white overflow-hidden cursor-pointer"
         onClick={() => nav("product", p.slug)}>
 
-        {/* Product emoji */}
-        <div className="w-full h-full flex items-center justify-center text-6xl transition-transform duration-500 group-hover:scale-105">
-          {p.emoji ?? "🛍️"}
-        </div>
+        {/* Product image */}
+        {p.images?.[0]?.url ? (
+          <Image
+            src={p.images[0].url}
+            alt={p.images[0].alt ?? p.name}
+            fill
+            sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
+            className="object-cover transition-transform duration-500 group-hover:scale-105"
+          />
+        ) : (
+          <div className="w-full h-full flex items-center justify-center text-6xl transition-transform duration-500 group-hover:scale-105">
+            🛍️
+          </div>
+        )}
 
         {/* Discount badge — top left */}
         {disc > 0 && (
