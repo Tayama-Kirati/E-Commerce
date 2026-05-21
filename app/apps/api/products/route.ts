@@ -5,7 +5,7 @@ import { prisma } from "@/app/lib/prisma";
 import { redis } from "@/app/lib/redis";
 import { z } from "zod";
 
-// ─── GET /api/products  
+// ─── GET /api/products ────────────────────────────────────────────────────────
 
 export async function GET(req: NextRequest) {
   try {
@@ -31,7 +31,7 @@ export async function GET(req: NextRequest) {
       });
     }
 
-    const where: any = { isActive: true, status: "ACTIVE" };
+    const where: any = { isActive: true };
     if (search) {
       where.OR = [
         { name: { contains: search, mode: "insensitive" } },
@@ -52,11 +52,10 @@ export async function GET(req: NextRequest) {
     if (seller) where.seller = { storeSlug: seller };
 
     const orderBy: any =
-      sort === "price_asc" ? { basePrice: "asc" } :
-      sort === "price_desc" ? { basePrice: "desc" } :
+      sort === "price_asc"   ? { basePrice: "asc" } :
+      sort === "price_desc"  ? { basePrice: "desc" } :
       sort === "rating_desc" ? { averageRating: "desc" } :
-      sort === "sales_desc" ? { totalSales: "desc" } :
-      sort === "views_desc" ? { totalViews: "desc" } :
+      sort === "sales_desc"  ? { totalSales: "desc" } :
       { createdAt: "desc" };
 
     const [products, total] = await Promise.all([
@@ -84,7 +83,7 @@ export async function GET(req: NextRequest) {
           hasVariants: true,
           createdAt: true,
           images: {
-            where: { isPrimary: true },
+            orderBy: { order: "asc" },
             take: 1,
             select: { url: true, alt: true },
           },
@@ -94,7 +93,6 @@ export async function GET(req: NextRequest) {
               storeName: true,
               storeSlug: true,
               isVerified: true,
-              city: true,
             },
           },
         },
@@ -128,19 +126,12 @@ const CreateProductSchema = z.object({
   basePrice: z.number().positive(),
   comparePrice: z.number().positive().nullable().optional(),
   stock: z.number().int().min(0),
-  lowStockAlert: z.number().int().min(0).default(5),
   sku: z.string().min(1).max(100).optional(),
   isEco: z.boolean().default(false),
   isFeatured: z.boolean().default(false),
   isFlashSale: z.boolean().default(false),
   flashSaleEndsAt: z.string().datetime().nullable().optional(),
   freeShipping: z.boolean().default(false),
-  status: z.enum(["DRAFT", "ACTIVE", "INACTIVE"]).default("DRAFT"),
-  metaTitle: z.string().max(70).optional(),
-  metaDescription: z.string().max(160).optional(),
-  attributes: z
-    .array(z.object({ name: z.string(), value: z.string(), sortOrder: z.number().default(0) }))
-    .default([]),
   tags: z.array(z.string()).default([]),
 });
 
@@ -154,9 +145,9 @@ export async function POST(req: NextRequest) {
     const seller = await prisma.seller.findUnique({
       where: { userId: session.user.id },
     });
-    if (!seller || seller.status !== "APPROVED") {
+    if (!seller) {
       return NextResponse.json(
-        { error: "Approved seller account required" },
+        { error: "Seller account required" },
         { status: 403 },
       );
     }
@@ -164,7 +155,6 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const data = CreateProductSchema.parse(body);
 
-    // Generate unique slug from name
     const base = data.name
       .toLowerCase()
       .replace(/[^a-z0-9]+/g, "-")
@@ -176,14 +166,14 @@ export async function POST(req: NextRequest) {
     }
 
     const product = await prisma.$transaction(async (tx: any) => {
-      const { tags, attributes, ...rest } = data;
+      const { tags, ...rest } = data;
 
       const created = await tx.product.create({
         data: {
           ...rest,
           slug,
           sellerId: seller.id,
-          isActive: rest.status === "ACTIVE",
+          isActive: true,
         },
       });
 
@@ -196,18 +186,11 @@ export async function POST(req: NextRequest) {
         });
       }
 
-      if (attributes.length > 0) {
-        await tx.productAttribute.createMany({
-          data: attributes.map((a: any) => ({ productId: created.id, ...a })),
-        });
-      }
-
       return tx.product.findUnique({
         where: { id: created.id },
         include: {
           images: true,
           variants: true,
-          attributes: true,
           tags: true,
           category: { select: { id: true, name: true, slug: true } },
         },

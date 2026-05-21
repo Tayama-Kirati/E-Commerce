@@ -1,6 +1,4 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/app/lib/auth";
 import { prisma } from "@/app/lib/prisma";
 import { z } from "zod";
 
@@ -14,88 +12,56 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const { productId, limit } = RequestSchema.parse(body);
 
-    const session = await getServerSession(authOptions);
-    let recommendedIds: string[] = [];
+    let categoryId: string | null = null;
+    let excludeId: string | undefined = productId;
 
-    if (session?.user) {
-      // Personalized: based on user's view history
-      const recentViews = await prisma.productView.findMany({
-        where: { userId: session.user.id },
-        orderBy: { viewedAt: "desc" },
-        take: 20,
-        select: { productId: true },
-      });
-
-      if (recentViews.length > 0) {
-        const viewedProducts = await prisma.product.findMany({
-          where: { id: { in: recentViews.map((v: any) => v.productId) } },
-          select: { embedding: true },
-        });
-
-        const avgEmbedding = viewedProducts[0]?.embedding ?? [];
-        if (Array.isArray(avgEmbedding) && avgEmbedding.length > 0) {
-          const { getAIRecommendations } = await import("@/app/lib/openai");
-          recommendedIds = await getAIRecommendations(
-            avgEmbedding as number[],
-            recentViews.map((v: any) => v.productId),
-            limit,
-          );
-        }
-      }
-    }
-
-    // Content-based fallback from current product
-    if (recommendedIds.length === 0 && productId) {
+    // Use current product's category for recommendations
+    if (productId) {
       const product = await prisma.product.findUnique({
         where: { id: productId },
-        select: { categoryId: true, embedding: true },
+        select: { categoryId: true },
+      });
+      categoryId = product?.categoryId ?? null;
+    }
+
+    // Category-based recommendations
+    if (categoryId) {
+      const similar = await prisma.product.findMany({
+        where: {
+          categoryId,
+          isActive: true,
+          ...(excludeId ? { id: { not: excludeId } } : {}),
+        },
+        take: limit,
+        orderBy: { totalSales: "desc" },
+        include: {
+          images: { orderBy: { order: "asc" }, take: 1 },
+          seller: { select: { id: true, storeName: true, isVerified: true } },
+          category: { select: { id: true, name: true, slug: true } },
+        },
       });
 
-      if (product?.embedding && Array.isArray(product.embedding) && product.embedding.length > 0) {
-        const { getAIRecommendations } = await import("@/app/lib/openai");
-        recommendedIds = await getAIRecommendations(
-          product.embedding as number[],
-          [productId],
-          limit,
-        );
-      } else if (product?.categoryId) {
-        // Category-based fallback
-        const similar = await prisma.product.findMany({
-          where: {
-            categoryId: product.categoryId,
-            id: { not: productId },
-            status: "ACTIVE",
-            isActive: true,
-          },
-          take: limit,
-          orderBy: { totalSales: "desc" },
-          select: { id: true },
-        });
-        recommendedIds = similar.map((p: any) => p.id);
+      if (similar.length > 0) {
+        return NextResponse.json({ products: similar });
       }
     }
 
-    // Trending fallback if still empty
-    if (recommendedIds.length === 0) {
-      const trending = await prisma.product.findMany({
-        where: { status: "ACTIVE", isActive: true },
-        take: limit,
-        orderBy: { totalSales: "desc" },
-        select: { id: true },
-      });
-      recommendedIds = trending.map((p: any) => p.id);
-    }
-
-    const products = await prisma.product.findMany({
-      where: { id: { in: recommendedIds }, status: "ACTIVE", isActive: true },
+    // Trending fallback
+    const trending = await prisma.product.findMany({
+      where: {
+        isActive: true,
+        ...(excludeId ? { id: { not: excludeId } } : {}),
+      },
+      take: limit,
+      orderBy: { totalSales: "desc" },
       include: {
-        images: { where: { isPrimary: true }, take: 1 },
+        images: { orderBy: { order: "asc" }, take: 1 },
         seller: { select: { id: true, storeName: true, isVerified: true } },
         category: { select: { id: true, name: true, slug: true } },
       },
     });
 
-    return NextResponse.json({ products });
+    return NextResponse.json({ products: trending });
   } catch (error) {
     if (error instanceof z.ZodError) {
       return NextResponse.json(

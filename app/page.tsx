@@ -30,6 +30,7 @@ import { WishlistPage }      from "@/app/components/pages/WishlistPage";
 import { SellerDashPage }    from "@/app/components/pages/SellerDashPage";
 import { SellerOnboardPage } from "@/app/components/pages/SellerOnboardPage";
 import { AdminPage }         from "@/app/components/pages/AdminPage";
+import { RoleSelectPage }    from "@/app/components/pages/RoleSelectPage";
 
 
 export default function App() {
@@ -174,6 +175,7 @@ export default function App() {
                 {page === "orders"     && <OrdersPage />}
                 {page === "order"      && <OrderDetailPage />}
                 {page === "track"      && <TrackPage />}
+                {page === "role-select" && <RoleSelectPage />}
                 {page === "login"      && <LoginPage />}
                 {page === "register"   && <RegisterPage />}
                 {page === "forgot"     && <ForgotPage />}

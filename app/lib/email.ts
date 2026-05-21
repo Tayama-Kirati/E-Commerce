@@ -1,7 +1,7 @@
 import { Resend } from "resend";
 
 const resend = new Resend(process.env.RESEND_API_KEY!);
-const FROM   = "NexMart <noreply@nexmart.com>";
+const FROM   = "PeaNut <noreply@peanut.com>";
 const BASE   = process.env.NEXTAUTH_URL!;
 
 export async function sendVerificationEmail({
@@ -10,7 +10,7 @@ export async function sendVerificationEmail({
   await resend.emails.send({
     from:    FROM,
     to,
-    subject: "Verify your NexMart account",
+    subject: "Verify your PeaNut account",
     html: `
       <!DOCTYPE html>
       <html>
@@ -21,7 +21,7 @@ export async function sendVerificationEmail({
           </div>
           <h1 style="font-size: 22px; font-weight: 700; color: #1A1523; margin-bottom: 12px;">Hi ${name}! 👋</h1>
           <p style="color: #6B6878; font-size: 15px; line-height: 1.6; margin-bottom: 8px;">
-            Welcome to NexMart! Click the button below to verify your email address and activate your account.
+            Welcome to PeaNut! Click the button below to verify your email address and activate your account.
           </p>
           <p style="color: #6B6878; font-size: 14px; margin-bottom: 28px;">This link expires in <strong>24 hours</strong>.</p>
           <div style="text-align: center; margin-bottom: 28px;">
@@ -35,7 +35,7 @@ export async function sendVerificationEmail({
           </p>
           <hr style="border: none; border-top: 1px solid #E8E6F0; margin: 24px 0;">
           <p style="color: #9B97A8; font-size: 12px; text-align: center;">
-            NexMart — Nepal's AI-Powered Marketplace<br>
+            PeaNut — Nepal's AI-Powered Marketplace<br>
             Kathmandu, Nepal
           </p>
         </div>
@@ -51,7 +51,7 @@ export async function sendPasswordResetEmail({
   await resend.emails.send({
     from:    FROM,
     to,
-    subject: "Reset your NexMart password",
+    subject: "Reset your PeaNut password",
     html: `
       <!DOCTYPE html>
       <html>
@@ -62,7 +62,7 @@ export async function sendPasswordResetEmail({
           </div>
           <h1 style="font-size: 22px; font-weight: 700; color: #1A1523; margin-bottom: 12px;">Password reset request</h1>
           <p style="color: #6B6878; font-size: 15px; line-height: 1.6; margin-bottom: 28px;">
-            Hi ${name}, we received a request to reset the password for your NexMart account.
+            Hi ${name}, we received a request to reset the password for your PeaNut account.
             Click below to choose a new password. This link expires in <strong>1 hour</strong>.
           </p>
           <div style="text-align: center; margin-bottom: 28px;">
@@ -90,11 +90,11 @@ export async function sendPasswordChangedEmail({ to, name }: { to: string; name:
   await resend.emails.send({
     from:    FROM,
     to,
-    subject: "Your NexMart password was changed",
+    subject: "Your PeaNut password was changed",
     html: `
       <div style="font-family: Inter, sans-serif; max-width: 520px; margin: 0 auto; padding: 40px;">
         <h1 style="color: #1A1523;">Password changed ✅</h1>
-        <p style="color: #6B6878;">Hi ${name}, your NexMart password was successfully changed.</p>
+        <p style="color: #6B6878;">Hi ${name}, your PeaNut password was successfully changed.</p>
         <p style="color: #6B6878;">If you didn't do this, please <a href="${BASE}/forgot-password" style="color: #3B82F6;">reset your password immediately</a> and contact support.</p>
       </div>
     `,

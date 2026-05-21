@@ -32,7 +32,7 @@ export const useUIStore = create<UIStore>()((set) => ({
 // ─────────────────────────────────────────────────────────────────────────────
 // store/wishlistStore.ts
 // Wishlist persisted to localStorage, synced to /api/user/wishlist on login
-// Used by: ProductCard, WishlistPage (nexmart-cart-customer/04)
+// Used by: ProductCard, WishlistPage (peanut-cart-customer/04)
 // ─────────────────────────────────────────────────────────────────────────────
 
 import { persist } from "zustand/middleware";
@@ -77,6 +77,6 @@ export const useWishlistStore = create<WishlistStore>()(
 
       clear: () => set({ ids: [] }),
     }),
-    { name: "nexmart-wishlist-v1", partialize: (s) => ({ ids: s.ids }) }
+    { name: "peanut-wishlist-v1", partialize: (s) => ({ ids: s.ids }) }
   )
 );

@@ -51,7 +51,7 @@ export const useWishlistStore = create<WishlistStore>()(
       clear: () => set({ ids: new Set(), isLoaded: false }),
     }),
     {
-      name:    "nexmart-wishlist",
+      name:    "peanut-wishlist",
       storage: {
         // Custom serializer since Set isn't JSON serializable
         getItem: (name) => {

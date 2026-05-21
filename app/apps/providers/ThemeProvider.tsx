@@ -1,56 +1,55 @@
 "use client";
-
-import { createContext, useContext, useEffect, useState } from "react";
+import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 
 type Theme = "light" | "dark";
 
-interface ThemeContextValue {
+interface ThemeCtx {
   theme: Theme;
   toggleTheme: () => void;
-  setTheme: (theme: Theme) => void;
+  setTheme: (t: Theme) => void;
 }
 
-const ThemeContext = createContext<ThemeContextValue>({
+const Ctx = createContext<ThemeCtx>({
   theme: "light",
   toggleTheme: () => {},
   setTheme: () => {},
 });
 
-export function ThemeProvider({ children }: { children: React.ReactNode }) {
+export function ThemeProvider({ children }: { children: ReactNode }) {
   const [theme, setThemeState] = useState<Theme>("light");
 
-  useEffect(() => {
-    const saved = localStorage.getItem("nexmart-theme") as Theme | null;
-    const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-    const resolved: Theme = saved === "light" || saved === "dark"
-      ? saved
-      : prefersDark ? "dark" : "light";
+  const apply = (t: Theme) => {
+    setThemeState(t);
+    const root = document.documentElement;
+    if (t === "dark") {
+      root.classList.add("dark");
+    } else {
+      root.classList.remove("dark");
+    }
+    localStorage.setItem("peanut-theme", t);
+  };
 
-    applyTheme(resolved);
-    setThemeState(resolved);
+  useEffect(() => {
+    const saved = localStorage.getItem("peanut-theme") as Theme | null;
+    const sysPref: Theme = window.matchMedia("(prefers-color-scheme: dark)").matches
+      ? "dark"
+      : "light";
+    apply(saved ?? sysPref);
   }, []);
 
-  function applyTheme(next: Theme) {
-    document.documentElement.classList.toggle("dark", next === "dark");
-    localStorage.setItem("nexmart-theme", next);
-  }
-
-  function setTheme(next: Theme) {
-    applyTheme(next);
-    setThemeState(next);
-  }
-
-  function toggleTheme() {
-    setTheme(theme === "light" ? "dark" : "light");
-  }
-
   return (
-    <ThemeContext.Provider value={{ theme, toggleTheme, setTheme }}>
+    <Ctx.Provider
+      value={{
+        theme,
+        toggleTheme: () => apply(theme === "dark" ? "light" : "dark"),
+        setTheme: apply,
+      }}
+    >
       {children}
-    </ThemeContext.Provider>
+    </Ctx.Provider>
   );
 }
 
 export function useTheme() {
-  return useContext(ThemeContext);
+  return useContext(Ctx);
 }

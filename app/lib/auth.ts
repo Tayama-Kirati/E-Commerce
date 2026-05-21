@@ -105,7 +105,7 @@ export const authOptions: NextAuthOptions = {
         data: {
           userId: user.id!,
           type:   "SYSTEM",
-          title:  "Welcome to NexMart! 🎉",
+          title:  "Welcome to PeaNut! 🎉",
           body:   "You've earned 100 welcome points! Start shopping to earn more.",
         },
       });

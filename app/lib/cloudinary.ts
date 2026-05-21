@@ -8,7 +8,7 @@ cloudinary.config({
  
 export async function uploadToCloudinary(
   base64: string,
-  folder  = "nexmart/products",
+  folder  = "peanut/products",
   options: Record<string, unknown> = {}
 ) {
   const result = await cloudinary.uploader.upload(base64, {
@@ -27,9 +27,9 @@ export async function deleteFromCloudinary(publicId: string) {
 }
  
 // Generate signed upload URL for direct browser uploads
-export function generateUploadSignature(folder = "nexmart/products") {
+export function generateUploadSignature(folder = "peanut/products") {
   const timestamp = Math.round(new Date().getTime() / 1000);
-  const params = { timestamp, folder, upload_preset: "nexmart_products" };
+  const params = { timestamp, folder, upload_preset: "peanut_products" };
   const signature = cloudinary.utils.api_sign_request(
     params,
     process.env.CLOUDINARY_API_SECRET!

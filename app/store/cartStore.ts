@@ -332,7 +332,7 @@ export const useCartStore = create<CartStore>()(
       },
     }),
     {
-      name:    "nexmart-cart-v2",
+      name:    "peanut-cart-v2",
       partialize:(state) => ({
         items:       state.items,
         savedItems:  state.savedItems,

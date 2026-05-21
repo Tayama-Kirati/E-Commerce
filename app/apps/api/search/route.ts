@@ -25,7 +25,6 @@ export async function GET(req: NextRequest) {
     if (type === "all" || type === "products") {
       results.products = await prisma.product.findMany({
         where: {
-          status: "ACTIVE",
           isActive: true,
           OR: [
             { name: { contains: q, mode: "insensitive" } },
@@ -42,7 +41,7 @@ export async function GET(req: NextRequest) {
           basePrice: true,
           averageRating: true,
           images: {
-            where: { isPrimary: true },
+            orderBy: { order: "asc" },
             take: 1,
             select: { url: true },
           },
@@ -54,18 +53,17 @@ export async function GET(req: NextRequest) {
     if (type === "all" || type === "categories") {
       results.categories = await prisma.category.findMany({
         where: {
-          isActive: true,
           name: { contains: q, mode: "insensitive" },
         },
         take: 5,
-        select: { id: true, name: true, slug: true, icon: true, image: true },
+        select: { id: true, name: true, slug: true, icon: true },
       });
     }
 
     if (type === "all" || type === "sellers") {
       results.sellers = await prisma.seller.findMany({
         where: {
-          status: "APPROVED",
+          isVerified: true,
           storeName: { contains: q, mode: "insensitive" },
         },
         take: 3,
@@ -73,25 +71,20 @@ export async function GET(req: NextRequest) {
           id: true,
           storeName: true,
           storeSlug: true,
-          storeLogo: true,
-          averageRating: true,
+          logo: true,
+          rating: true,
           isVerified: true,
         },
       });
     }
 
-    // Trending searches (track in Redis sorted set)
     await redis.zincrby("search:trending", 1, q.toLowerCase());
-
     await redis.setex(cacheKey, 60, JSON.stringify(results));
     return NextResponse.json(results);
   } catch (error) {
     if (error instanceof z.ZodError) {
       return NextResponse.json({ error: "Invalid query" }, { status: 400 });
     }
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 },
-    );
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }
