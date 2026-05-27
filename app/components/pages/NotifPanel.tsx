@@ -17,7 +17,12 @@ export function NotifPanel() {
  .catch(() => setLoading(false));
  }, [notifPanelOpen, user]);
 
- const ICONS: Record<string, string> = { ORDER_PLACED:"📦", ORDER_SHIPPED:"🚚", ORDER_DELIVERED:"✅", ORDER_CANCELLED:"❌", PAYMENT_SUCCESS:"💳", FLASH_SALE:"⚡", PROMO_ALERT:"🎁", SYSTEM:"🔔" };
+ const ICONS: Record<string, string> = { ORDER:"📦", PAYMENT:"💳", PROMO:"🎁", SYSTEM:"🔔", REVIEW:"⭐" };
+
+ const markAllRead = () => {
+  fetch("/api/user/notifications", { method: "PATCH" });
+  setNotifs(prev => prev.map(n => ({ ...n, isRead: true })));
+ };
 
  if (!notifPanelOpen) return null;
 
@@ -25,8 +30,13 @@ export function NotifPanel() {
  <div className="fixed inset-0 z-50" onClick={toggleNotifPanel}>
  <aside className="absolute right-4 top-20 w-80 bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-2xl shadow-xl overflow-hidden" onClick={e => e.stopPropagation()}>
  <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100 dark:border-gray-800">
- <div className="flex items-center gap-2"><span>🔔</span><h2 className="font-bold text-sm text-gray-900 dark:text-white">Notifications</h2></div>
- <button onClick={toggleNotifPanel} className="text-gray-400 hover:text-gray-600">✕</button>
+  <div className="flex items-center gap-2"><span>🔔</span><h2 className="font-bold text-sm text-gray-900 dark:text-white">Notifications</h2></div>
+  <div className="flex items-center gap-3">
+   {notifs.some(n => !n.isRead) && (
+    <button onClick={markAllRead} className="text-xs text-violet-600 font-semibold hover:underline">Mark all read</button>
+   )}
+   <button onClick={toggleNotifPanel} className="text-gray-400 hover:text-gray-600">✕</button>
+  </div>
  </div>
  <div className="max-h-80 overflow-y-auto">
  {loading ? (

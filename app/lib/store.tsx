@@ -140,8 +140,8 @@ export const MOCK_PRODUCTS = [
 ];
 
 export const MOCK_ORDERS = [
-  { id:"ord1", orderNumber:"NX-2025-47832", status:"OUT_FOR_DELIVERY", total:195000, createdAt:new Date(Date.now()-7200000),  items:[{product:{name:"iPhone 16 Pro Max",images:[{url:null}]},quantity:1,price:195000,total:195000,emoji:"📱"}], address:{city:"Kathmandu",district:"Kathmandu"}, trackingNumber:"NEX8829341", shippingCost:0, discount:0, subtotal:195000, paymentMethod:"KHALTI", paymentStatus:"COMPLETED" },
-  { id:"ord2", orderNumber:"NX-2025-47234", status:"DELIVERED",        total:38500,  createdAt:new Date(Date.now()-86400000), items:[{product:{name:"Sony WH-1000XM6",images:[{url:null}]},quantity:1,price:38500,total:38500,emoji:"🎧"}],  address:{city:"Lalitpur",district:"Lalitpur"},   trackingNumber:"NEX7734211", shippingCost:0, discount:0, subtotal:38500,  paymentMethod:"ESEWA",  paymentStatus:"COMPLETED", deliveredAt:new Date(Date.now()-43200000) },
+  { id:"ord1", orderNumber:"NX-2025-47832", status:"OUT_FOR_DELIVERY", total:195000, createdAt:new Date("2025-05-23T10:00:00Z"), items:[{product:{name:"iPhone 16 Pro Max",images:[{url:null}]},quantity:1,price:195000,total:195000,emoji:"📱"}], address:{city:"Kathmandu",district:"Kathmandu"}, trackingNumber:"NEX8829341", shippingCost:0, discount:0, subtotal:195000, paymentMethod:"KHALTI", paymentStatus:"COMPLETED" },
+  { id:"ord2", orderNumber:"NX-2025-47234", status:"DELIVERED",        total:38500,  createdAt:new Date("2025-05-22T10:00:00Z"), items:[{product:{name:"Sony WH-1000XM6",images:[{url:null}]},quantity:1,price:38500,total:38500,emoji:"🎧"}],  address:{city:"Lalitpur",district:"Lalitpur"},   trackingNumber:"NEX7734211", shippingCost:0, discount:0, subtotal:38500,  paymentMethod:"ESEWA",  paymentStatus:"COMPLETED", deliveredAt:new Date("2025-05-23T04:00:00Z") },
 ];
 
 // ── Contexts ──────────────────────────────────────────────────────────────────

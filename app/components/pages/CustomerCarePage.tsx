@@ -10,6 +10,7 @@ const MUTED  = "var(--color-muted)";
 const SECTIONS = [
   { key: "help-center",     label: "Help Center",       icon: "❓" },
   { key: "how-to-buy",      label: "How to Buy",        icon: "🛒" },
+  { key: "how-to-sell",     label: "Sell on PeaNut",    icon: "🏪" },
   { key: "returns-refunds", label: "Returns & Refunds", icon: "↩️" },
   { key: "contact-us",      label: "Contact Us",        icon: "📞" },
 ];
@@ -214,6 +215,200 @@ function ReturnsRefunds() {
   );
 }
 
+// ── How to Sell ───────────────────────────────────────────────────────────────
+const SELLER_STEPS = [
+  {
+    step: "1", icon: "👤", title: "Create a PeaNut Account",
+    desc: "If you don't have an account yet, click 'Sign In' at the top-right and choose 'Register'. Fill in your name, email, and a strong password. Verify your email by clicking the link we send you — your account won't be active until you do.",
+  },
+  {
+    step: "2", icon: "🏪", title: "Apply to Become a Seller",
+    desc: "Once logged in, click your profile avatar (top-right) and select 'Become a Seller' from the dropdown menu. This opens the Seller Onboarding page.",
+  },
+  {
+    step: "3", icon: "📝", title: "Fill in Your Store Details",
+    desc: "You'll be asked for: Store Name (your brand/business name, e.g. \"TechZone Nepal\"), Store Slug (a URL-friendly ID, auto-generated from your store name), and a short Description of what you sell. You can also upload a Store Logo and Banner image to make your storefront look professional.",
+  },
+  {
+    step: "4", icon: "⏳", title: "Wait for Approval",
+    desc: "After submitting, our team reviews your application within 24–48 hours. You'll receive an email once your seller account is approved and activated. Until then your account is in 'pending' state.",
+  },
+  {
+    step: "5", icon: "📦", title: "Add Your First Product",
+    desc: "Once approved, go to your Profile and click 'Seller Dashboard'. Click the '+ Add Product' button. Fill in the product details — see the full product form guide below.",
+  },
+  {
+    step: "6", icon: "🚀", title: "Start Selling",
+    desc: "Your product goes live immediately after you save it. Customers can find it through search, category browsing, and the homepage. You'll be notified by email and in your dashboard whenever someone places an order.",
+  },
+];
+
+const PRODUCT_FIELDS = [
+  { field: "Product Name", required: true,  desc: "Clear, descriptive name. E.g. 'Sony WH-1000XM6 Wireless Headphones'. Avoid keyword stuffing." },
+  { field: "Category",     required: true,  desc: "Choose the most specific category that fits your product (Electronics, Fashion, Home & Living, etc.)." },
+  { field: "Base Price",   required: true,  desc: "Your selling price in NPR (Nepali Rupees). E.g. 38500 for रू 38,500." },
+  { field: "Compare Price",required: false, desc: "Original / crossed-out price to show a discount. Leave blank if not on sale." },
+  { field: "Stock",        required: true,  desc: "How many units you have available. Set to 0 to mark as out of stock without deleting the listing." },
+  { field: "Short Desc.",  required: false, desc: "One or two sentences shown on the product card. Keep it punchy — highlight the key benefit." },
+  { field: "Description",  required: true,  desc: "Full product details: features, specs, dimensions, care instructions. Use clear paragraphs." },
+  { field: "SKU",          required: false, desc: "Your internal stock-keeping code. Used for your own inventory tracking; not shown to buyers." },
+  { field: "Images",       required: true,  desc: "Upload at least one clear product photo. Use a white or neutral background. More images = more trust." },
+  { field: "Variants",     required: false, desc: "If your product comes in different sizes, colours, etc., add variants. Each variant can have its own price and stock." },
+  { field: "Tags",         required: false, desc: "Keywords that help buyers find your product in search (e.g. 'wireless', 'Nepal', 'gift')." },
+  { field: "Free Shipping",required: false, desc: "Toggle on if you cover the shipping cost. Products with free shipping rank higher and sell faster." },
+  { field: "Flash Sale",   required: false, desc: "Enable to add your product to the flash sale banner with a countdown timer." },
+  { field: "Eco Friendly", required: false, desc: "Badge shown on the product card if your item is sustainably made or packaged." },
+];
+
+const SELLER_TIPS = [
+  "📸  Use bright, sharp photos — the first image is your first impression",
+  "📝  Write descriptions that answer buyer questions before they ask",
+  "🏷️  Price competitively — check what similar products cost on PeaNut",
+  "⚡  Respond to order status updates quickly — fast dispatch earns better reviews",
+  "⭐  Good reviews drive more sales — follow up on every order",
+  "📦  Keep your stock count accurate so buyers are never disappointed",
+  "🎯  Use all the category tags and keywords relevant to your product",
+  "🔄  Update prices and stock regularly, especially during flash sales",
+];
+
+const SELLER_FAQS = [
+  {
+    q: "Is there a fee to sell on PeaNut?",
+    a: "Creating a seller account is free. PeaNut currently charges a small platform commission on completed sales. The exact percentage is shown in your Seller Dashboard under Settings.",
+  },
+  {
+    q: "How do I receive my payment?",
+    a: "Payments from buyers are held securely and transferred to your registered bank account or Khalti/eSewa wallet after the order is marked Delivered and the return window has passed (7 days). Payouts are processed every Monday.",
+  },
+  {
+    q: "Can I sell from anywhere in Nepal?",
+    a: "Yes. You can sell from any province. Just make sure you can arrange delivery — either through your own courier or by using a third-party courier service. Buyers see your estimated delivery time.",
+  },
+  {
+    q: "What happens when I get an order?",
+    a: "You'll receive an email notification and see the order in your Seller Dashboard under 'Orders'. Update the status as you pack and ship — use the location field to let the buyer track where their order is.",
+  },
+  {
+    q: "Can I have more than one store?",
+    a: "Each PeaNut account can have one seller profile. If you need to manage multiple brands, create separate accounts with separate email addresses.",
+  },
+  {
+    q: "What if a buyer wants to return a product?",
+    a: "Returns are handled through PeaNut's return policy. If the item is defective or wrong, you must accept the return. For change-of-mind returns, your store policy applies. Refunds are deducted from your next payout.",
+  },
+];
+
+function HowToSell() {
+  const { nav } = useUIStore();
+  const [openFaq, setOpenFaq] = useState<number | null>(null);
+
+  return (
+    <div>
+      <h2 className="text-2xl font-black mb-2" style={{ color: "var(--color-heading)" }}>Sell on PeaNut</h2>
+      <p className="mb-8" style={{ color: MUTED }}>
+        Reach thousands of buyers across Nepal. Setting up your store takes less than 10 minutes.
+      </p>
+
+      {/* CTA banner */}
+      <div className="rounded-2xl p-6 mb-10 flex flex-col md:flex-row items-center justify-between gap-4"
+        style={{ background: "linear-gradient(135deg, #1C1A16, #2D2418)" }}>
+        <div>
+          <p className="text-white font-black text-lg mb-1">Ready to start selling?</p>
+          <p className="text-sm" style={{ color: "#B8A882" }}>Free to join · Sell nationwide · Get paid weekly</p>
+        </div>
+        <button
+          onClick={() => nav("onboarding")}
+          className="px-6 py-3 rounded-xl font-bold text-sm text-white shrink-0 transition-opacity hover:opacity-90"
+          style={{ backgroundColor: GOLD }}
+        >
+          Open Seller Account →
+        </button>
+      </div>
+
+      {/* Step-by-step guide */}
+      <h3 className="font-black text-lg mb-4" style={{ color: "var(--color-heading)" }}>Step-by-Step: Becoming a Seller</h3>
+      <div className="space-y-4 mb-10">
+        {SELLER_STEPS.map(s => (
+          <div key={s.step} className="flex gap-5 rounded-2xl p-5" style={{ border: `1px solid ${BORDER}`, backgroundColor: IVORY }}>
+            <div className="w-12 h-12 rounded-2xl flex items-center justify-center text-xl shrink-0"
+              style={{ backgroundColor: GOLD + "20", border: `2px solid ${GOLD}` }}>
+              {s.icon}
+            </div>
+            <div>
+              <div className="flex items-center gap-2 mb-1">
+                <span className="text-[11px] font-black px-2 py-0.5 rounded-full text-white" style={{ backgroundColor: GOLD }}>STEP {s.step}</span>
+                <span className="font-bold text-sm" style={{ color: "var(--color-heading)" }}>{s.title}</span>
+              </div>
+              <p className="text-sm leading-relaxed" style={{ color: MUTED }}>{s.desc}</p>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Product form guide */}
+      <h3 className="font-black text-lg mb-2" style={{ color: "var(--color-heading)" }}>Product Form — Field by Field</h3>
+      <p className="text-sm mb-5" style={{ color: MUTED }}>
+        When you click <strong>+ Add Product</strong> in your Seller Dashboard, you'll see these fields:
+      </p>
+      <div className="rounded-2xl overflow-hidden mb-10" style={{ border: `1px solid ${BORDER}` }}>
+        <table className="w-full text-sm">
+          <thead>
+            <tr style={{ backgroundColor: IVORY }}>
+              <th className="text-left px-5 py-3 font-bold" style={{ color: "var(--color-heading)" }}>Field</th>
+              <th className="text-left px-5 py-3 font-bold" style={{ color: "var(--color-heading)" }}>Required</th>
+              <th className="text-left px-5 py-3 font-bold" style={{ color: "var(--color-heading)" }}>What to enter</th>
+            </tr>
+          </thead>
+          <tbody>
+            {PRODUCT_FIELDS.map((row, i) => (
+              <tr key={i} style={{ borderTop: `1px solid ${BORDER}` }}>
+                <td className="px-5 py-3 font-semibold whitespace-nowrap" style={{ color: "var(--color-heading)" }}>{row.field}</td>
+                <td className="px-5 py-3">
+                  <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${row.required ? "text-white" : ""}`}
+                    style={{ backgroundColor: row.required ? GOLD : BORDER, color: row.required ? "white" : MUTED }}>
+                    {row.required ? "Required" : "Optional"}
+                  </span>
+                </td>
+                <td className="px-5 py-3 text-xs leading-relaxed" style={{ color: MUTED }}>{row.desc}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      {/* Tips */}
+      <h3 className="font-black text-lg mb-4" style={{ color: "var(--color-heading)" }}>Tips for Selling More</h3>
+      <div className="rounded-2xl p-6 mb-10" style={{ background: "linear-gradient(135deg, #1C1A16, #2D2418)" }}>
+        <ul className="space-y-2">
+          {SELLER_TIPS.map(tip => (
+            <li key={tip} className="text-sm" style={{ color: "#B8A882" }}>{tip}</li>
+          ))}
+        </ul>
+      </div>
+
+      {/* Seller FAQs */}
+      <h3 className="font-black text-lg mb-4" style={{ color: "var(--color-heading)" }}>Seller FAQs</h3>
+      <div className="space-y-2">
+        {SELLER_FAQS.map((faq, i) => (
+          <div key={i} className="rounded-2xl overflow-hidden" style={{ border: `1px solid ${BORDER}` }}>
+            <button
+              className="flex items-center justify-between w-full px-5 py-4 text-left font-semibold text-sm transition-colors"
+              style={{ backgroundColor: openFaq === i ? IVORY : "transparent", color: "var(--color-heading)" }}
+              onClick={() => setOpenFaq(openFaq === i ? null : i)}
+            >
+              <span>{faq.q}</span>
+              <span className="ml-4 text-lg shrink-0 transition-transform" style={{ transform: openFaq === i ? "rotate(45deg)" : "none", color: GOLD }}>+</span>
+            </button>
+            {openFaq === i && (
+              <div className="px-5 pb-4 text-sm leading-relaxed" style={{ color: MUTED }}>{faq.a}</div>
+            )}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 // ── Contact Us ────────────────────────────────────────────────────────────────
 function ContactUs() {
   const [form, setForm] = useState({ name: "", email: "", subject: "", message: "" });
@@ -361,6 +556,7 @@ export function CustomerCarePage() {
         <div className="flex-1 min-w-0">
           {activeSection === "help-center"     && <HelpCenter />}
           {activeSection === "how-to-buy"      && <HowToBuy />}
+          {activeSection === "how-to-sell"     && <HowToSell />}
           {activeSection === "returns-refunds" && <ReturnsRefunds />}
           {activeSection === "contact-us"      && <ContactUs />}
         </div>

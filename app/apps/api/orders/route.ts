@@ -10,19 +10,35 @@ function generateOrderNumber() {
     .padStart(3, "0")}`;
 }
 
-const CreateOrderSchema = z.object({
-  addressId: z.string(),
-  paymentMethod: z.enum(["KHALTI", "ESEWA", "STRIPE", "CASH_ON_DELIVERY"]),
-  notes: z.string().max(500).optional(),
-  items: z
-    .array(
-      z.object({
-        productId: z.string(),
-        quantity: z.number().int().positive().max(100),
-      }),
-    )
-    .min(1),
+const InlineAddressSchema = z.object({
+  fullName: z.string().min(2),
+  phone: z.string().min(7),
+  street: z.string().min(1),
+  city: z.string().min(1),
+  district: z.string().min(1),
+  province: z.string().min(1),
+  label: z.string().optional(),
 });
+
+const CreateOrderSchema = z
+  .object({
+    addressId: z.string().optional(),
+    address: InlineAddressSchema.optional(),
+    paymentMethod: z.enum(["KHALTI", "ESEWA", "STRIPE", "CASH_ON_DELIVERY"]),
+    notes: z.string().max(500).optional(),
+    items: z
+      .array(
+        z.object({
+          productId: z.string(),
+          quantity: z.number().int().positive().max(100),
+        }),
+      )
+      .min(1),
+  })
+  .refine((d) => d.addressId || d.address, {
+    message: "Either addressId or address is required",
+    path: ["address"],
+  });
 
 // ─── POST /api/orders ─────────────────────────────────────────────────────────
 
@@ -49,23 +65,25 @@ export async function POST(req: NextRequest) {
   const data = parsed.data;
 
   const productIds = [...new Set(data.items.map((i) => i.productId))];
-  const [products, address] = await Promise.all([
-    prisma.product.findMany({
-      where: { id: { in: productIds }, isActive: true },
-    }),
-    prisma.address.findUnique({ where: { id: data.addressId } }),
-  ]);
+
+  // Validate addressId if provided (inline address is created inside the transaction)
+  if (data.addressId) {
+    const dbAddress = await prisma.address.findUnique({
+      where: { id: data.addressId },
+      select: { userId: true },
+    });
+    if (!dbAddress || dbAddress.userId !== session.user.id) {
+      return NextResponse.json({ error: "Delivery address not found" }, { status: 400 });
+    }
+  }
+
+  const products = await prisma.product.findMany({
+    where: { id: { in: productIds }, isActive: true },
+  });
 
   if (products.length !== productIds.length) {
     const missing = productIds.filter((id) => !products.find((p) => p.id === id));
-    return NextResponse.json(
-      { error: `Products unavailable: ${missing.join(", ")}` },
-      { status: 400 },
-    );
-  }
-
-  if (!address || address.userId !== session.user.id) {
-    return NextResponse.json({ error: "Delivery address not found" }, { status: 400 });
+    return NextResponse.json({ error: `Products unavailable: ${missing.join(", ")}` }, { status: 400 });
   }
 
   // Stock validation
@@ -89,18 +107,35 @@ export async function POST(req: NextRequest) {
     return { productId: item.productId, price, quantity: item.quantity, total };
   });
 
-  const freeShipping =
-    subtotal >= 1000 || products.every((p) => p.freeShipping);
+  const freeShipping = subtotal >= 1000 || products.every((p) => p.freeShipping);
   const shippingCost = freeShipping ? 0 : 150;
   const grandTotal = subtotal + shippingCost;
   const pointsEarned = Math.floor(grandTotal / 100);
 
   const order = await prisma.$transaction(async (tx: any) => {
+    // Resolve address: use existing DB address or create one from the inline payload
+    let resolvedAddressId: string | null = data.addressId ?? null;
+    if (!resolvedAddressId && data.address) {
+      const newAddr = await tx.address.create({
+        data: {
+          userId: session.user.id,
+          label: data.address.label ?? "Home",
+          fullName: data.address.fullName,
+          phone: data.address.phone,
+          street: data.address.street,
+          city: data.address.city,
+          district: data.address.district,
+          province: data.address.province,
+        },
+      });
+      resolvedAddressId = newAddr.id;
+    }
+
     const created = await tx.order.create({
       data: {
         orderNumber: generateOrderNumber(),
         userId: session.user.id,
-        addressId: data.addressId,
+        addressId: resolvedAddressId,
         paymentMethod: data.paymentMethod,
         paymentStatus: "PENDING",
         status: "PENDING",

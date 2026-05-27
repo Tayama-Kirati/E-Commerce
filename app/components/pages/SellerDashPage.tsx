@@ -1,5 +1,6 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
+import Image from "next/image";
 import { formatPrice, MOCK_CATEGORIES, useUIStore, useAuthStore } from "@/app/lib/store";
 
 const GOLD     = "#C68313";
@@ -13,6 +14,7 @@ type SellerProduct = {
   basePrice: number; comparePrice: number; stock: number;
   description: string; freeShipping: boolean; isFlashSale: boolean;
   badge: string; status: "active" | "draft";
+  imageUrl?: string;
 };
 
 type SellerOrder = {
@@ -71,48 +73,168 @@ function Toggle({ label, value, onChange }: { label: string; value: boolean; onC
   );
 }
 
+type UploadedImage = { url: string; publicId: string };
+type Category = { id: string; name: string };
+
 function ProductModal({ product, onSave, onClose }: {
   product: Partial<SellerProduct> | null;
   onSave: (p: SellerProduct) => void;
   onClose: () => void;
 }) {
-  const EMPTY: Partial<SellerProduct> = {
-    name:"", category:"Electronics", emoji:"🛍️", basePrice:0, comparePrice:0,
-    stock:0, description:"", freeShipping:false, isFlashSale:false, badge:"", status:"active",
-  };
-  const [form, setForm] = useState<Partial<SellerProduct>>(product ? { ...product } : EMPTY);
-  const [errors, setErrors] = useState<Record<string, string>>({});
+  const isEdit = !!product?.id;
+
+  const [form, setForm] = useState({
+    name:         product?.name        ?? "",
+    categoryId:   "",
+    categoryName: product?.category    ?? "Electronics",
+    emoji:        product?.emoji       ?? "🛍️",
+    basePrice:    product?.basePrice   ?? 0,
+    comparePrice: product?.comparePrice ?? 0,
+    stock:        product?.stock       ?? 0,
+    description:  product?.description ?? "",
+    freeShipping: product?.freeShipping ?? false,
+    isFlashSale:  product?.isFlashSale  ?? false,
+    badge:        product?.badge        ?? "",
+    status:       (product?.status      ?? "active") as "active" | "draft",
+  });
   const set = (k: string, v: any) => setForm(p => ({ ...p, [k]: v }));
 
-  const disc = (form.comparePrice ?? 0) > (form.basePrice ?? 0)
-    ? Math.round((((form.comparePrice ?? 0) - (form.basePrice ?? 0)) / (form.comparePrice ?? 1)) * 100)
+  const [categories, setCategories] = useState<Category[]>(
+    MOCK_CATEGORIES.map(c => ({ id: c.id, name: c.name }))
+  );
+  const [images, setImages]       = useState<UploadedImage[]>([]);
+  const [uploading, setUploading] = useState(false);
+  const [saving, setSaving]       = useState(false);
+  const [errors, setErrors]       = useState<Record<string, string>>({});
+  const fileRef = useRef<HTMLInputElement>(null);
+
+  // Load real categories from API; fall back to mock if unreachable
+  useEffect(() => {
+    fetch("/api/categories")
+      .then(r => r.ok ? r.json() : null)
+      .then(data => {
+        if (data?.categories?.length) {
+          const cats: Category[] = data.categories.map((c: any) => ({ id: c.id, name: c.name }));
+          setCategories(cats);
+          const match = cats.find(c => c.name === form.categoryName) ?? cats[0];
+          if (match) setForm(p => ({ ...p, categoryId: match.id, categoryName: match.name }));
+        }
+      })
+      .catch(() => {});
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const handleFiles = async (files: FileList) => {
+    if (!files.length) return;
+    setUploading(true);
+    const added: UploadedImage[] = [];
+    for (const file of Array.from(files).slice(0, 6 - images.length)) {
+      const fd = new FormData();
+      fd.append("file", file);
+      fd.append("folder", "peanut/products");
+      try {
+        const res = await fetch("/api/upload", { method: "POST", body: fd });
+        if (res.ok) {
+          const d = await res.json();
+          added.push({ url: d.url, publicId: d.publicId });
+        }
+      } catch { /* skip failed individual uploads */ }
+    }
+    setImages(prev => [...prev, ...added]);
+    setUploading(false);
+    // reset so re-selecting the same file triggers onChange again
+    if (fileRef.current) fileRef.current.value = "";
+  };
+
+  const removeImage = (i: number) =>
+    setImages(prev => prev.filter((_, j) => j !== i));
+
+  const disc = form.comparePrice > form.basePrice
+    ? Math.round(((form.comparePrice - form.basePrice) / form.comparePrice) * 100)
     : 0;
 
   const validate = () => {
     const e: Record<string, string> = {};
-    if (!form.name?.trim()) e.name = "Product name is required";
-    if (!form.basePrice || form.basePrice <= 0) e.basePrice = "Enter a valid price";
-    if (!form.stock || form.stock < 0) e.stock = "Enter valid stock quantity";
+    if (!form.name.trim())       e.name       = "Product name is required";
+    if (form.basePrice <= 0)     e.basePrice  = "Enter a valid price";
+    if (form.stock < 0)          e.stock      = "Enter valid stock quantity";
+    if (!form.categoryId)        e.categoryId = "Select a category";
+    if (!isEdit && !form.description.trim()) e.description = "Description is required";
     setErrors(e);
     return Object.keys(e).length === 0;
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!validate()) return;
-    onSave({
-      id:           form.id ?? `p${Date.now()}`,
-      name:         form.name!,
-      category:     form.category ?? "Electronics",
-      emoji:        form.emoji ?? "🛍️",
-      basePrice:    form.basePrice!,
-      comparePrice: form.comparePrice ?? 0,
-      stock:        form.stock ?? 0,
-      description:  form.description ?? "",
-      freeShipping: form.freeShipping ?? false,
-      isFlashSale:  form.isFlashSale ?? false,
-      badge:        form.badge ?? "",
-      status:       form.status ?? "active",
-    });
+    setSaving(true);
+
+    if (isEdit) {
+      // Edit path: update local state only (mock products have no DB row)
+      onSave({
+        id:           product!.id!,
+        name:         form.name,
+        category:     form.categoryName,
+        emoji:        form.emoji,
+        basePrice:    form.basePrice,
+        comparePrice: form.comparePrice,
+        stock:        form.stock,
+        description:  form.description,
+        freeShipping: form.freeShipping,
+        isFlashSale:  form.isFlashSale,
+        badge:        form.badge,
+        status:       form.status,
+        imageUrl:     images[0]?.url ?? product?.imageUrl,
+      });
+      setSaving(false);
+      return;
+    }
+
+    // Create path: POST to API
+    try {
+      const res = await fetch("/api/products", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name:         form.name,
+          categoryId:   form.categoryId,
+          description:  form.description || "Quality product from PeaNut marketplace.",
+          basePrice:    form.basePrice,
+          comparePrice: form.comparePrice > 0 ? form.comparePrice : null,
+          stock:        form.stock,
+          freeShipping: form.freeShipping,
+          isFlashSale:  form.isFlashSale,
+          isActive:     form.status === "active",
+          tags:         [],
+          images:       images.map(img => ({ url: img.url, publicId: img.publicId, alt: form.name })),
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        setErrors({ _form: data.error ?? "Failed to create product. Please try again." });
+        setSaving(false);
+        return;
+      }
+
+      const p = data.product;
+      onSave({
+        id:           p.id,
+        name:         p.name,
+        category:     p.category?.name ?? form.categoryName,
+        emoji:        form.emoji,
+        basePrice:    Number(p.basePrice),
+        comparePrice: Number(p.comparePrice ?? 0),
+        stock:        p.stock,
+        description:  p.description,
+        freeShipping: p.freeShipping,
+        isFlashSale:  p.isFlashSale,
+        badge:        form.badge,
+        status:       p.isActive ? "active" : "draft",
+        imageUrl:     p.images?.[0]?.url,
+      });
+    } catch {
+      setErrors({ _form: "Network error. Please try again." });
+      setSaving(false);
+    }
   };
 
   return (
@@ -123,29 +245,104 @@ function ProductModal({ product, onSave, onClose }: {
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 sticky top-0 bg-white rounded-t-3xl z-10" style={{ borderBottom: `1px solid ${BORDER}` }}>
           <h2 className="text-base font-black" style={{ color: CHARCOAL, fontFamily: "var(--font-playfair,'Poppins',system-ui,sans-serif)" }}>
-            {product?.id ? "Edit Product" : "Add New Product"}
+            {isEdit ? "Edit Product" : "Add New Product"}
           </h2>
           <button onClick={onClose} className="w-8 h-8 rounded-full flex items-center justify-center text-sm transition-colors hover:bg-gray-100" style={{ color: MUTED }}>✕</button>
         </div>
 
         <div className="p-6 space-y-5">
-          {/* Emoji picker */}
+
+          {/* Photos */}
           <div>
-            <label className="block text-xs font-bold mb-2" style={{ color: CHARCOAL }}>Product Icon</label>
-            <div className="flex flex-wrap gap-2">
-              {EMOJIS.map(e => (
-                <button key={e} onClick={() => set("emoji", e)}
-                  className="w-10 h-10 rounded-xl text-xl flex items-center justify-center transition-all"
-                  style={{ backgroundColor: form.emoji === e ? IVORY : "#F9F9F9", border: `2px solid ${form.emoji === e ? GOLD : BORDER}` }}>
-                  {e}
-                </button>
-              ))}
+            <label className="block text-xs font-bold mb-2" style={{ color: CHARCOAL }}>
+              Product Photos <span style={{ color: MUTED }}>(up to 6 · first photo is the cover)</span>
+            </label>
+
+            {/* Upload zone */}
+            <div
+              role="button"
+              tabIndex={0}
+              onClick={() => !uploading && images.length < 6 && fileRef.current?.click()}
+              onKeyDown={e => e.key === "Enter" && fileRef.current?.click()}
+              className="rounded-xl flex flex-col items-center justify-center gap-1.5 py-6 cursor-pointer transition-colors"
+              style={{
+                border: `2px dashed ${BORDER}`,
+                backgroundColor: IVORY,
+                opacity: images.length >= 6 ? 0.5 : 1,
+                cursor: images.length >= 6 ? "not-allowed" : "pointer",
+              }}
+            >
+              {uploading ? (
+                <>
+                  <div className="w-6 h-6 border-2 border-t-transparent rounded-full animate-spin" style={{ borderColor: GOLD }} />
+                  <p className="text-xs font-semibold" style={{ color: MUTED }}>Uploading…</p>
+                </>
+              ) : (
+                <>
+                  <span className="text-3xl">📷</span>
+                  <p className="text-sm font-bold" style={{ color: CHARCOAL }}>
+                    {images.length === 0 ? "Click to upload photos" : "Add more photos"}
+                  </p>
+                  <p className="text-xs" style={{ color: MUTED }}>JPG, PNG, WebP · max 10 MB each</p>
+                </>
+              )}
             </div>
+            <input
+              ref={fileRef}
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
+              multiple
+              className="sr-only"
+              onChange={e => e.target.files && handleFiles(e.target.files)}
+            />
+
+            {/* Previews */}
+            {images.length > 0 && (
+              <div className="grid grid-cols-3 sm:grid-cols-6 gap-2 mt-3">
+                {images.map((img, i) => (
+                  <div key={img.publicId} className="relative aspect-square rounded-xl overflow-hidden group"
+                    style={{ border: `2px solid ${i === 0 ? GOLD : BORDER}` }}>
+                    <Image src={img.url} alt="" fill sizes="80px" className="object-cover" />
+                    {i === 0 && (
+                      <span className="absolute bottom-0 inset-x-0 text-[10px] font-bold text-center py-0.5 text-white"
+                        style={{ backgroundColor: "rgba(198,131,19,0.85)" }}>
+                        Cover
+                      </span>
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => removeImage(i)}
+                      className="absolute top-1 right-1 w-5 h-5 rounded-full bg-red-500 text-white text-xs flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                    >
+                      ×
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
+
+          {/* Fallback emoji picker (shown when no photos uploaded) */}
+          {images.length === 0 && (
+            <div>
+              <label className="block text-xs font-bold mb-2" style={{ color: CHARCOAL }}>
+                Fallback Icon <span style={{ color: MUTED }}>(used when no photo is uploaded)</span>
+              </label>
+              <div className="flex flex-wrap gap-2">
+                {EMOJIS.map(e => (
+                  <button key={e} type="button" onClick={() => set("emoji", e)}
+                    className="w-10 h-10 rounded-xl text-xl flex items-center justify-center transition-all"
+                    style={{ backgroundColor: form.emoji === e ? IVORY : "#F9F9F9", border: `2px solid ${form.emoji === e ? GOLD : BORDER}` }}>
+                    {e}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Name */}
           <div>
-            <Input label="Product Name *" value={form.name ?? ""} onChange={(e: any) => set("name", e.target.value)} placeholder="e.g. Apple iPhone 16 Pro Max 256GB" />
+            <Input label="Product Name *" value={form.name} onChange={(e: any) => set("name", e.target.value)} placeholder="e.g. Apple iPhone 16 Pro Max 256GB" />
             {errors.name && <p className="text-xs text-red-500 mt-1">{errors.name}</p>}
           </div>
 
@@ -153,15 +350,24 @@ function ProductModal({ product, onSave, onClose }: {
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-xs font-bold mb-1" style={{ color: CHARCOAL }}>Category *</label>
-              <select value={form.category} onChange={e => set("category", e.target.value)}
+              <select
+                value={form.categoryId}
+                onChange={e => {
+                  const cat = categories.find(c => c.id === e.target.value);
+                  set("categoryId", e.target.value);
+                  if (cat) set("categoryName", cat.name);
+                }}
                 className="w-full px-4 py-2.5 rounded-xl text-sm outline-none"
-                style={{ border: `1.5px solid ${BORDER}`, color: CHARCOAL, backgroundColor: "white" }}>
-                {MOCK_CATEGORIES.map(c => <option key={c.id}>{c.name}</option>)}
+                style={{ border: `1.5px solid ${errors.categoryId ? "#EF4444" : BORDER}`, color: CHARCOAL, backgroundColor: "white" }}
+              >
+                <option value="" disabled>Select category</option>
+                {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
               </select>
+              {errors.categoryId && <p className="text-xs text-red-500 mt-1">{errors.categoryId}</p>}
             </div>
             <div>
               <label className="block text-xs font-bold mb-1" style={{ color: CHARCOAL }}>Badge <span style={{ color: MUTED }}>(optional)</span></label>
-              <select value={form.badge ?? ""} onChange={e => set("badge", e.target.value)}
+              <select value={form.badge} onChange={e => set("badge", e.target.value)}
                 className="w-full px-4 py-2.5 rounded-xl text-sm outline-none"
                 style={{ border: `1.5px solid ${BORDER}`, color: CHARCOAL, backgroundColor: "white" }}>
                 <option value="">No Badge</option>
@@ -183,7 +389,7 @@ function ProductModal({ product, onSave, onClose }: {
             </div>
             {disc > 0 && (
               <div className="mt-2 px-4 py-2 rounded-xl text-xs font-bold" style={{ backgroundColor: IVORY, color: GOLD }}>
-                ✓ {disc}% discount applied — customers will see रू {(form.comparePrice ?? 0).toLocaleString()} crossed out
+                ✓ {disc}% discount applied — customers will see रू {form.comparePrice.toLocaleString()} crossed out
               </div>
             )}
           </div>
@@ -196,20 +402,23 @@ function ProductModal({ product, onSave, onClose }: {
 
           {/* Description */}
           <div>
-            <label className="block text-xs font-bold mb-1" style={{ color: CHARCOAL }}>Product Description</label>
-            <textarea value={form.description ?? ""} onChange={e => set("description", e.target.value)}
+            <label className="block text-xs font-bold mb-1" style={{ color: CHARCOAL }}>
+              Product Description {!isEdit && <span style={{ color: "#EF4444" }}>*</span>}
+            </label>
+            <textarea value={form.description} onChange={e => set("description", e.target.value)}
               placeholder="Describe your product — features, specifications, what's in the box..."
               rows={3}
               className="w-full px-4 py-2.5 rounded-xl text-sm outline-none resize-none transition-all"
-              style={{ border: `1.5px solid ${BORDER}`, color: CHARCOAL }}
+              style={{ border: `1.5px solid ${errors.description ? "#EF4444" : BORDER}`, color: CHARCOAL }}
               onFocus={e => { e.target.style.borderColor = GOLD; e.target.style.boxShadow = `0 0 0 3px rgba(198,131,19,0.1)`; }}
-              onBlur={e => { e.target.style.borderColor = BORDER; e.target.style.boxShadow = "none"; }} />
+              onBlur={e => { e.target.style.borderColor = errors.description ? "#EF4444" : BORDER; e.target.style.boxShadow = "none"; }} />
+            {errors.description && <p className="text-xs text-red-500 mt-1">{errors.description}</p>}
           </div>
 
           {/* Toggles */}
           <div className="flex items-center gap-6">
-            <Toggle label="🚚 Free Shipping" value={form.freeShipping ?? false} onChange={() => set("freeShipping", !form.freeShipping)} />
-            <Toggle label="⚡ Flash Sale"    value={form.isFlashSale ?? false}  onChange={() => set("isFlashSale",  !form.isFlashSale)}  />
+            <Toggle label="🚚 Free Shipping" value={form.freeShipping} onChange={() => set("freeShipping", !form.freeShipping)} />
+            <Toggle label="⚡ Flash Sale"    value={form.isFlashSale}  onChange={() => set("isFlashSale",  !form.isFlashSale)}  />
           </div>
 
           {/* Status */}
@@ -217,7 +426,7 @@ function ProductModal({ product, onSave, onClose }: {
             <label className="block text-xs font-bold mb-2" style={{ color: CHARCOAL }}>Listing Status</label>
             <div className="flex gap-2">
               {([["active","✓ Active — visible to shoppers"],["draft","◷ Draft — hidden from shoppers"]] as const).map(([s, label]) => (
-                <button key={s} onClick={() => set("status", s)}
+                <button key={s} type="button" onClick={() => set("status", s)}
                   className="flex-1 py-2 rounded-xl text-xs font-bold transition-all"
                   style={form.status === s
                     ? { backgroundColor: GOLD, color: "#fff" }
@@ -227,21 +436,29 @@ function ProductModal({ product, onSave, onClose }: {
               ))}
             </div>
           </div>
+
+          {/* API-level error */}
+          {errors._form && (
+            <div className="px-4 py-3 rounded-xl text-xs font-semibold text-red-700 bg-red-50 border border-red-200">
+              {errors._form}
+            </div>
+          )}
         </div>
 
         {/* Footer */}
         <div className="flex gap-3 px-6 py-4 sticky bottom-0 bg-white rounded-b-3xl" style={{ borderTop: `1px solid ${BORDER}` }}>
-          <button onClick={onClose}
+          <button type="button" onClick={onClose}
             className="flex-1 py-2.5 rounded-xl text-sm font-bold transition-all"
             style={{ backgroundColor: IVORY, color: MUTED, border: `1px solid ${BORDER}` }}>
             Cancel
           </button>
-          <button onClick={handleSave}
-            className="flex-1 py-2.5 rounded-xl text-sm font-bold text-white transition-all"
+          <button type="button" onClick={handleSave} disabled={saving || uploading}
+            className="flex-1 py-2.5 rounded-xl text-sm font-bold text-white transition-all flex items-center justify-center gap-2 disabled:opacity-60"
             style={{ backgroundColor: GOLD }}
-            onMouseEnter={e => e.currentTarget.style.backgroundColor = "#9B6210"}
-            onMouseLeave={e => e.currentTarget.style.backgroundColor = GOLD}>
-            {product?.id ? "Save Changes" : "Add Product"}
+            onMouseEnter={e => { if (!saving && !uploading) e.currentTarget.style.backgroundColor = "#9B6210"; }}
+            onMouseLeave={e => { e.currentTarget.style.backgroundColor = GOLD; }}>
+            {saving && <div className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />}
+            {saving ? "Saving…" : isEdit ? "Save Changes" : "Add Product"}
           </button>
         </div>
       </div>
@@ -306,8 +523,18 @@ export function SellerDashPage() {
   const [orderFilter, setOrderFilter]   = useState("ALL");
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
   const [search, setSearch]     = useState("");
+  const [sellerProfile, setSellerProfile] = useState<{ storeName?: string; storeSlug?: string; status?: string } | null>(null);
 
   if (!user) { nav("login"); return null; }
+
+  // eslint-disable-next-line react-hooks/rules-of-hooks
+  useEffect(() => {
+    if (!user?.email) return;
+    fetch(`/api/seller/lookup?email=${encodeURIComponent(user.email)}`)
+      .then(r => r.ok ? r.json() : null)
+      .then(d => { if (d?.seller) setSellerProfile(d.seller); })
+      .catch(() => {});
+  }, [user?.email]);
 
   const filteredOrders = orders.filter(o =>
     (orderFilter === "ALL" || o.status === orderFilter) &&
@@ -350,13 +577,17 @@ export function SellerDashPage() {
             <h1 className="text-lg font-black" style={{ color: CHARCOAL, fontFamily: "var(--font-playfair,'Poppins',system-ui,sans-serif)" }}>
               Seller Hub
             </h1>
-            <p className="text-xs" style={{ color: MUTED }}>{user.name}'s Store · PeaNut Marketplace</p>
+            <p className="text-xs" style={{ color: MUTED }}>{sellerProfile?.storeName ?? user.name + "'s Store"} · PeaNut Marketplace</p>
           </div>
           <div className="flex items-center gap-2">
-            <button onClick={() => nav("home")}
-              className="px-3 py-2 text-xs font-bold rounded-xl transition-all hidden sm:block"
+            <button
+              onClick={() => {
+                if (sellerProfile?.storeSlug) nav("store", sellerProfile.storeSlug);
+                else showToast("Store slug loading — try again in a moment", "error");
+              }}
+              className="px-3 py-2 text-xs font-bold rounded-xl transition-all"
               style={{ border: `1px solid ${BORDER}`, color: MUTED }}>
-              🌐 View Store
+              🌐 View My Store
             </button>
             <button onClick={() => setModal({ open: true, product: null })}
               className="px-4 py-2 text-xs font-bold text-white rounded-xl transition-all"
@@ -482,8 +713,10 @@ export function SellerDashPage() {
                   <div className="space-y-3">
                     {products.map(p => (
                       <div key={p.id} className="bg-white rounded-2xl p-4 flex items-center gap-4" style={{ border: `1px solid ${BORDER}` }}>
-                        <div className="w-12 h-12 rounded-xl flex items-center justify-center text-2xl shrink-0" style={{ backgroundColor: IVORY }}>
-                          {p.emoji}
+                        <div className="w-12 h-12 rounded-xl overflow-hidden shrink-0 flex items-center justify-center text-2xl" style={{ backgroundColor: IVORY }}>
+                          {p.imageUrl
+                            ? <Image src={p.imageUrl} alt={p.name} width={48} height={48} className="object-cover w-full h-full" />
+                            : p.emoji}
                         </div>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 flex-wrap mb-0.5">

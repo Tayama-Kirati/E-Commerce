@@ -142,7 +142,16 @@ const CreateProductSchema = z.object({
   isFlashSale: z.boolean().default(false),
   flashSaleEndsAt: z.string().nullable().optional(),
   freeShipping: z.boolean().default(false),
+  isActive: z.boolean().default(true),
   tags: z.array(z.string()).default([]),
+  images: z
+    .array(z.object({
+      url: z.string().url(),
+      alt: z.string().max(200).optional(),
+      publicId: z.string().optional(),
+    }))
+    .max(8)
+    .default([]),
 });
 
 export async function POST(req: NextRequest) {
@@ -176,15 +185,10 @@ export async function POST(req: NextRequest) {
     }
 
     const product = await prisma.$transaction(async (tx: any) => {
-      const { tags, ...rest } = data;
+      const { tags, images, ...rest } = data;
 
       const created = await tx.product.create({
-        data: {
-          ...rest,
-          slug,
-          sellerId: seller.id,
-          isActive: true,
-        },
+        data: { ...rest, slug, sellerId: seller.id },
       });
 
       if (tags.length > 0) {
@@ -192,6 +196,17 @@ export async function POST(req: NextRequest) {
           data: tags.map((tag: string) => ({
             productId: created.id,
             tag: tag.toLowerCase().trim(),
+          })),
+        });
+      }
+
+      if (images.length > 0) {
+        await tx.productImage.createMany({
+          data: images.map((img, i) => ({
+            productId: created.id,
+            url: img.url,
+            alt: img.alt ?? data.name,
+            order: i,
           })),
         });
       }

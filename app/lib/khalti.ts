@@ -1,4 +1,4 @@
-const KHALTI_BASE = "https://a.khalti.com/api/v2";
+const KHALTI_BASE = "https://dev.khalti.com/api/v2";
  
 export async function initiateKhaltiPayment(params: {
   orderId:    string;

@@ -50,7 +50,12 @@ async function verifyHandler(body: { pidx: string; orderId: string }) {
  return NextResponse.json({ error: "Payment not completed" }, { status: 400 });
  }
 
- const order = await prisma.order.update({
+ const existing = await prisma.order.findUnique({ where: { id: orderId } });
+ if (!existing) {
+ return NextResponse.json({ error: "Order not found" }, { status: 404 });
+ }
+
+ await prisma.order.update({
  where: { id: orderId },
  data: {
  paymentStatus: "COMPLETED",
@@ -60,23 +65,19 @@ async function verifyHandler(body: { pidx: string; orderId: string }) {
  },
  });
 
- const user = await prisma.user.findUnique({ where: { id: order.userId } });
- if (user && order.pointsEarned > 0) {
+ if (existing.pointsEarned > 0) {
  await prisma.$transaction([
  prisma.user.update({
- where: { id: order.userId },
- data: {
- loyaltyPoints: { increment: order.pointsEarned },
- totalSpent: { increment: order.total },
- },
+ where: { id: existing.userId },
+ data: { loyaltyPoints: { increment: existing.pointsEarned } },
  }),
  prisma.loyaltyTransaction.create({
  data: {
- userId: order.userId,
- points: order.pointsEarned,
- type: "PURCHASE",
- description: `Points earned for order ${order.orderNumber}`,
- orderId: order.id,
+ userId: existing.userId,
+ orderId: existing.id,
+ points: existing.pointsEarned,
+ type: "EARNED",
+ description: `Points earned for order ${existing.orderNumber}`,
  },
  }),
  ]);
@@ -84,6 +85,6 @@ async function verifyHandler(body: { pidx: string; orderId: string }) {
 
  return NextResponse.json({
  success: true,
- order: { id: order.id, orderNumber: order.orderNumber },
+ order: { id: existing.id, orderNumber: existing.orderNumber },
  });
 }

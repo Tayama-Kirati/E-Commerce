@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
 import Image from "next/image";
-import { generateOrderNumber, useCartStore, useUIStore, useAuthStore, apiPost } from "@/app/lib/store";
+import { useCartStore, useUIStore } from "@/app/lib/store";
 
 const GOLD     = "#C68313";
 const BORDER   = "#E8E8E8";
@@ -357,48 +357,78 @@ function AddressCard({
 export function CheckoutPage() {
   const { cartItems, cartTotal, cartShipping, clearCart } = useCartStore();
   const { nav, showToast } = useUIStore();
-  const { user } = useAuthStore();
-
-  const [addresses, setAddresses] = useState<SavedAddress[]>(() => {
-    const stored = loadAddresses();
-    if (stored.length) return stored;
-    // Seed a default address from the logged-in user if none saved
-    return [{
-      id: "addr-default",
-      fullName: user?.name ?? "Guest User",
-      phone: "9800000000",
-      building: "",
-      colony: "Mahadev Chowk",
-      province: "Bagmati Province",
-      city: "Kathmandu",
-      area: "Thamel",
-      address: "Thamel, Kathmandu",
-      label: "HOME",
-      isDefault: true,
-    }];
-  });
-
-  const defaultId    = addresses.find(a => a.isDefault)?.id ?? addresses[0]?.id ?? "";
-  const [selectedId, setSelectedId] = useState<string>(defaultId);
+  const [addresses,  setAddresses]  = useState<SavedAddress[]>([]);
+  const [selectedId, setSelectedId] = useState<string>("");
   const [modal,      setModal]      = useState<{ mode: "add" | "edit"; addr?: SavedAddress } | null>(null);
   const [promoCode,  setPromoCode]  = useState("");
+  const [couponDiscount, setCouponDiscount] = useState(0);
+  const [couponApplied,  setCouponApplied]  = useState<string | null>(null);
+  const [couponError,    setCouponError]    = useState<string | null>(null);
+  const [couponLoading,  setCouponLoading]  = useState(false);
   const [showPay,    setShowPay]    = useState(false);
   const [payMethod,  setPayMethod]  = useState("KHALTI");
   const [placing,    setPlacing]    = useState(false);
   const [confirmed,  setConfirmed]  = useState(false);
   const [orderNum,   setOrderNum]   = useState("");
 
-  // Persist whenever addresses change
-  useEffect(() => { saveAddresses(addresses); }, [addresses]);
+  const [deliveryRange, setDeliveryRange] = useState({ d1: "", d2: "" });
+
+  // Client-only: load saved addresses + compute delivery date range
+  useEffect(() => {
+    const stored = loadAddresses();
+    if (stored.length) {
+      setAddresses(stored);
+      setSelectedId(stored.find(a => a.isDefault)?.id ?? stored[0]?.id ?? "");
+    }
+    const today = new Date();
+    const d1 = new Date(today); d1.setDate(d1.getDate() + 2);
+    const d2 = new Date(today); d2.setDate(d2.getDate() + 3);
+    const fmt = (d: Date) => d.toLocaleDateString("en-US", { day: "numeric", month: "short" });
+    setDeliveryRange({ d1: fmt(d1), d2: fmt(d2) });
+  }, []);
+
+  // Persist whenever addresses change (skip empty initial state)
+  useEffect(() => {
+    if (addresses.length > 0) saveAddresses(addresses);
+  }, [addresses]);
 
   const selectedAddr = addresses.find(a => a.id === selectedId) ?? addresses[0];
   const deliveryFee  = cartShipping > 0 ? cartShipping : 170;
-  const grandTotal   = cartTotal + deliveryFee;
+  const grandTotal   = cartTotal + deliveryFee - couponDiscount;
 
-  const today = new Date();
-  const d1 = new Date(today); d1.setDate(d1.getDate() + 2);
-  const d2 = new Date(today); d2.setDate(d2.getDate() + 3);
-  const fmtDate = (d: Date) => d.toLocaleDateString("en-US", { day: "numeric", month: "short" });
+  const applyCoupon = async () => {
+    if (!promoCode.trim()) return;
+    setCouponLoading(true);
+    setCouponError(null);
+    try {
+      const res  = await fetch("/api/coupons/validate", {
+        method:  "POST",
+        headers: { "Content-Type": "application/json" },
+        body:    JSON.stringify({ code: promoCode, orderTotal: cartTotal }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setCouponError(data.error ?? "Invalid coupon");
+        setCouponDiscount(0);
+        setCouponApplied(null);
+      } else {
+        setCouponDiscount(data.discountAmount);
+        setCouponApplied(data.coupon.code);
+        showToast(`Coupon applied — रू ${data.discountAmount.toLocaleString()} off!`);
+      }
+    } catch {
+      setCouponError("Failed to validate coupon");
+    }
+    setCouponLoading(false);
+  };
+
+  const removeCoupon = () => {
+    setCouponDiscount(0);
+    setCouponApplied(null);
+    setCouponError(null);
+    setPromoCode("");
+  };
+
 
   const handleSaveAddress = (data: Omit<SavedAddress, "id" | "isDefault">) => {
     if (modal?.mode === "edit" && modal.addr) {
@@ -431,18 +461,107 @@ export function CheckoutPage() {
   };
 
   const placeOrder = async () => {
+    if (!selectedAddr) return;
     setPlacing(true);
-    const res = await apiPost("/api/orders", {
-      addressId: "temp-addr",
-      paymentMethod: payMethod,
-      items: cartItems.map(i => ({ productId: i.id, quantity: i.qty })),
-    });
-    setPlacing(false);
-    const num = res?.order?.orderNumber ?? res?.orderNumber ?? generateOrderNumber();
-    setOrderNum(num);
+
+    // Map local address fields to the API schema
+    const street = [selectedAddr.building, selectedAddr.colony]
+      .filter(Boolean).join(", ") || selectedAddr.address || selectedAddr.area || selectedAddr.city;
+
+    let orderId: string;
+    let orderNumber: string;
+    let requiresPayment: boolean;
+
+    try {
+      const res = await fetch("/api/orders", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          address: {
+            fullName: selectedAddr.fullName,
+            phone: selectedAddr.phone,
+            street,
+            city: selectedAddr.city,
+            district: selectedAddr.city,
+            province: selectedAddr.province,
+            label: selectedAddr.label,
+          },
+          paymentMethod: payMethod,
+          items: cartItems.map(i => ({ productId: i.productId ?? i.id, quantity: i.qty })),
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        showToast(data.error ?? "Failed to place order. Please try again.", "error");
+        setPlacing(false);
+        return;
+      }
+
+      orderId = data.order.id;
+      orderNumber = data.order.orderNumber;
+      requiresPayment = data.requiresPayment;
+    } catch {
+      showToast("Network error. Please try again.", "error");
+      setPlacing(false);
+      return;
+    }
+
     clearCart();
-    setConfirmed(true);
-    showToast("Order placed successfully! 🎉");
+
+    if (!requiresPayment) {
+      setPlacing(false);
+      setOrderNum(orderNumber);
+      setConfirmed(true);
+      showToast("Order placed successfully! 🎉");
+      return;
+    }
+
+    // Initiate gateway payment
+    try {
+      if (payMethod === "KHALTI") {
+        const res = await fetch("/api/payments/khalti", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ orderId }),
+        });
+        const payData = await res.json();
+        if (payData.paymentUrl) {
+          window.location.href = payData.paymentUrl;
+          return;
+        }
+        showToast(payData.error ?? "Failed to initiate Khalti payment.", "error");
+      } else if (payMethod === "ESEWA") {
+        const res = await fetch("/api/payments/esewa", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ orderId }),
+        });
+        const payData = await res.json();
+        if (payData.params) {
+          // eSewa requires a form POST to their gateway
+          const form = document.createElement("form");
+          form.method = "POST";
+          form.action = "https://uat.esewa.com.np/epay/main";
+          form.style.display = "none";
+          Object.entries(payData.params).forEach(([k, v]) => {
+            const input = document.createElement("input");
+            input.type = "hidden";
+            input.name = k;
+            input.value = String(v);
+            form.appendChild(input);
+          });
+          document.body.appendChild(form);
+          form.submit();
+          return;
+        }
+        showToast(payData.error ?? "Failed to initiate eSewa payment.", "error");
+      }
+    } catch {
+      showToast("Payment gateway error. Your order was saved — contact support.", "error");
+    }
+
+    setPlacing(false);
   };
 
   // ── Confirmation screen ────────────────────────────────────
@@ -583,7 +702,7 @@ export function CheckoutPage() {
                 <p className="text-sm font-black" style={{ color: CHARCOAL }}>रू {deliveryFee}</p>
                 <p className="text-xs font-semibold" style={{ color: CHARCOAL }}>Standard Delivery</p>
                 <p className="text-xs mt-0.5" style={{ color: MUTED }}>
-                  Guaranteed by {fmtDate(d1)}–{fmtDate(d2)}
+                  {deliveryRange.d1 && deliveryRange.d2 ? `Guaranteed by ${deliveryRange.d1}–${deliveryRange.d2}` : "2–3 day delivery"}
                 </p>
               </div>
             </div>
@@ -639,18 +758,34 @@ export function CheckoutPage() {
           {/* Promotion */}
           <div className="bg-white dark:bg-[#1A1814] rounded-xl p-4" style={{ border: `1px solid ${BORDER}` }}>
             <h3 className="font-black text-sm mb-3" style={{ color: CHARCOAL }}>Promotion</h3>
-            <div className="flex gap-2">
-              <input
-                value={promoCode}
-                onChange={e => setPromoCode(e.target.value)}
-                placeholder="Enter Store/Daraz Code"
-                className="flex-1 px-3 py-2 text-sm rounded outline-none"
-                style={{ border: `1px solid ${BORDER}`, color: CHARCOAL, backgroundColor: "var(--color-bg)" }}
-              />
-              <button className="px-4 py-2 rounded text-sm font-bold text-white shrink-0" style={{ backgroundColor: GOLD }}>
-                APPLY
-              </button>
-            </div>
+            {couponApplied ? (
+              <div className="flex items-center justify-between px-3 py-2 rounded" style={{ backgroundColor: "#DCFCE7", border: "1px solid #16A34A" }}>
+                <span className="text-sm font-semibold text-green-700">✓ {couponApplied} — रू {couponDiscount.toLocaleString()} off</span>
+                <button onClick={removeCoupon} className="text-xs text-green-600 hover:text-red-500 font-bold transition-colors">Remove</button>
+              </div>
+            ) : (
+              <>
+                <div className="flex gap-2">
+                  <input
+                    value={promoCode}
+                    onChange={e => { setPromoCode(e.target.value); setCouponError(null); }}
+                    onKeyDown={e => e.key === "Enter" && applyCoupon()}
+                    placeholder="Enter coupon code"
+                    className="flex-1 px-3 py-2 text-sm rounded outline-none"
+                    style={{ border: `1px solid ${couponError ? "#EF4444" : BORDER}`, color: CHARCOAL, backgroundColor: "var(--color-bg)" }}
+                  />
+                  <button
+                    onClick={applyCoupon}
+                    disabled={couponLoading || !promoCode.trim()}
+                    className="px-4 py-2 rounded text-sm font-bold text-white shrink-0 disabled:opacity-50"
+                    style={{ backgroundColor: GOLD }}
+                  >
+                    {couponLoading ? "…" : "APPLY"}
+                  </button>
+                </div>
+                {couponError && <p className="text-xs text-red-500 mt-1.5">{couponError}</p>}
+              </>
+            )}
           </div>
 
           {/* Invoice */}
@@ -673,6 +808,12 @@ export function CheckoutPage() {
                 <span style={{ color: MUTED }}>Delivery Fee</span>
                 <span className="font-semibold" style={{ color: CHARCOAL }}>रू {deliveryFee.toLocaleString()}</span>
               </div>
+              {couponDiscount > 0 && (
+                <div className="flex justify-between">
+                  <span style={{ color: "#16A34A" }}>Coupon ({couponApplied})</span>
+                  <span className="font-semibold text-green-600">− रू {couponDiscount.toLocaleString()}</span>
+                </div>
+              )}
               <div className="flex justify-between font-black text-base pt-2" style={{ borderTop: `1px solid ${BORDER}` }}>
                 <span style={{ color: CHARCOAL }}>Total:</span>
                 <span style={{ color: GOLD }}>रू {grandTotal.toLocaleString()}</span>

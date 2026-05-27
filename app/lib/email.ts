@@ -17,7 +17,7 @@ export async function sendVerificationEmail({
       <body style="font-family: Inter, sans-serif; background: #F8F7FC; margin: 0; padding: 40px 16px;">
         <div style="max-width: 520px; margin: 0 auto; background: #fff; border-radius: 24px; padding: 40px; border: 1px solid #E8E6F0;">
           <div style="text-align: center; margin-bottom: 32px;">
-            <span style="font-size: 28px; font-weight: 700; color: #3B82F6;">Nex<span style="color: #F59E0B;">Mart</span></span>
+            <span style="font-size: 28px; font-weight: 700; color: #1A1523;">Pea<span style="color: #C68313;">Nut</span></span>
           </div>
           <h1 style="font-size: 22px; font-weight: 700; color: #1A1523; margin-bottom: 12px;">Hi ${name}! 👋</h1>
           <p style="color: #6B6878; font-size: 15px; line-height: 1.6; margin-bottom: 8px;">
@@ -26,7 +26,7 @@ export async function sendVerificationEmail({
           <p style="color: #6B6878; font-size: 14px; margin-bottom: 28px;">This link expires in <strong>24 hours</strong>.</p>
           <div style="text-align: center; margin-bottom: 28px;">
             <a href="${BASE}/api/auth/verify-email?token=${token}"
-               style="display: inline-block; background: linear-gradient(135deg, #3B82F6, #60A5FA); color: #fff; text-decoration: none; font-weight: 600; font-size: 15px; padding: 14px 32px; border-radius: 50px;">
+               style="display: inline-block; background: linear-gradient(135deg, #C68313, #E8A020); color: #fff; text-decoration: none; font-weight: 600; font-size: 15px; padding: 14px 32px; border-radius: 50px;">
               Verify My Email →
             </a>
           </div>
@@ -35,7 +35,7 @@ export async function sendVerificationEmail({
           </p>
           <hr style="border: none; border-top: 1px solid #E8E6F0; margin: 24px 0;">
           <p style="color: #9B97A8; font-size: 12px; text-align: center;">
-            PeaNut — Nepal's AI-Powered Marketplace<br>
+            PeaNut — Nepal's Premium Marketplace<br>
             Kathmandu, Nepal
           </p>
         </div>
@@ -58,7 +58,7 @@ export async function sendPasswordResetEmail({
       <body style="font-family: Inter, sans-serif; background: #F8F7FC; margin: 0; padding: 40px 16px;">
         <div style="max-width: 520px; margin: 0 auto; background: #fff; border-radius: 24px; padding: 40px; border: 1px solid #E8E6F0;">
           <div style="text-align: center; margin-bottom: 32px;">
-            <span style="font-size: 28px; font-weight: 700; color: #3B82F6;">Nex<span style="color: #F59E0B;">Mart</span></span>
+            <span style="font-size: 28px; font-weight: 700; color: #1A1523;">Pea<span style="color: #C68313;">Nut</span></span>
           </div>
           <h1 style="font-size: 22px; font-weight: 700; color: #1A1523; margin-bottom: 12px;">Password reset request</h1>
           <p style="color: #6B6878; font-size: 15px; line-height: 1.6; margin-bottom: 28px;">
@@ -67,7 +67,7 @@ export async function sendPasswordResetEmail({
           </p>
           <div style="text-align: center; margin-bottom: 28px;">
             <a href="${BASE}/reset-password?token=${token}"
-               style="display: inline-block; background: linear-gradient(135deg, #3B82F6, #60A5FA); color: #fff; text-decoration: none; font-weight: 600; font-size: 15px; padding: 14px 32px; border-radius: 50px;">
+               style="display: inline-block; background: linear-gradient(135deg, #C68313, #E8A020); color: #fff; text-decoration: none; font-weight: 600; font-size: 15px; padding: 14px 32px; border-radius: 50px;">
               Reset My Password →
             </a>
           </div>
@@ -127,7 +127,7 @@ export async function sendOrderConfirmationEmail({
       <body style="font-family: Inter, sans-serif; background: #F8F7FC; margin: 0; padding: 40px 16px;">
         <div style="max-width: 580px; margin: 0 auto; background: #fff; border-radius: 24px; padding: 40px; border: 1px solid #E8E6F0;">
           <div style="text-align: center; margin-bottom: 24px;">
-            <span style="font-size: 28px; font-weight: 700; color: #3B82F6;">Nex<span style="color: #F59E0B;">Mart</span></span>
+            <span style="font-size: 28px; font-weight: 700; color: #1A1523;">Pea<span style="color: #C68313;">Nut</span></span>
           </div>
           <div style="background: linear-gradient(135deg, #3B82F6, #F59E0B); border-radius: 16px; padding: 24px; text-align: center; margin-bottom: 28px;">
             <p style="color: rgba(255,255,255,0.8); font-size: 13px; margin: 0 0 8px;">Order confirmed! 🎉</p>
@@ -149,7 +149,7 @@ export async function sendOrderConfirmationEmail({
           </div>
           <div style="text-align: center;">
             <a href="${BASE}/account/orders"
-               style="display: inline-block; background: #3B82F6; color: #fff; text-decoration: none; font-weight: 600; font-size: 14px; padding: 12px 28px; border-radius: 50px;">
+               style="display: inline-block; background: #C68313; color: #fff; text-decoration: none; font-weight: 600; font-size: 14px; padding: 12px 28px; border-radius: 50px;">
               Track My Order →
             </a>
           </div>

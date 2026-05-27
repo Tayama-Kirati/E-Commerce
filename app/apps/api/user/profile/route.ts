@@ -25,6 +25,7 @@ export async function GET(req: NextRequest) {
  name: true,
  phone: true,
  phoneVerified: true,
+ birthDate: true,
  avatar: true,
  role: true,
  loyaltyPoints: true,
@@ -70,6 +71,7 @@ const UpdateProfileSchema = z.object({
  .regex(/^\+?[0-9]{10,15}$/)
  .optional()
  .nullable(),
+ birthDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional().nullable(),
  language: z.enum(["en", "ne", "hi"]).optional(),
  currency: z.enum(["NPR", "USD", "INR"]).optional(),
  darkMode: z.boolean().optional(),
@@ -104,7 +106,13 @@ export async function PUT(req: NextRequest) {
 
  const updated = await prisma.user.update({
  where: { id: session.user.id },
- data: { ...data, ...(name ? { name } : {}) },
+ data: {
+  ...data,
+  ...(name ? { name } : {}),
+  ...(data.birthDate !== undefined
+   ? { birthDate: data.birthDate ? new Date(data.birthDate) : null }
+   : {}),
+ },
  select: {
  id: true,
  email: true,
@@ -112,6 +120,7 @@ export async function PUT(req: NextRequest) {
  lastName: true,
  name: true,
  phone: true,
+ birthDate: true,
  avatar: true,
  language: true,
  currency: true,

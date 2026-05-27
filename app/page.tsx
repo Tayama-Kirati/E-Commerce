@@ -36,7 +36,13 @@ import { CustomerCarePage }  from "@/app/components/pages/CustomerCarePage";
 import { AboutUsPage }       from "@/app/components/pages/AboutUsPage";
 import { MyReviewsPage }     from "@/app/components/pages/MyReviewsPage";
 import { MyReturnsPage }     from "@/app/components/pages/MyReturnsPage";
+import { SellerStorePage }   from "@/app/components/pages/SellerStorePage";
 
+
+const SELLER_BLOCKED = new Set([
+  "home","products","product","cart","checkout",
+  "orders","order","track","wishlist","reviews","returns",
+]);
 
 export default function App() {
   const [user,          setUser]       = useState<User | null>(() => {
@@ -62,10 +68,15 @@ export default function App() {
   }, []);
 
   const nav = useCallback((p: any, data = null) => {
-    setPage(p); setPageData(data);
+    const role = user?.role;
+    // Redirect sellers away from customer-only pages
+    const target = (role === "SELLER" && SELLER_BLOCKED.has(p)) ? "seller" : p;
+    setPage(target); setPageData(data);
+    const url = target === "home" ? "/" : `/?page=${target}`;
+    window.history.pushState({ page: target, pageData: data }, "", url);
     window.scrollTo({ top: 0, behavior: "smooth" });
     setMobileMenu(false);
-  }, []);
+  }, [user?.role]);
 
   const cartCount    = useMemo(() => cartItems.reduce((s,i) => s + i.qty, 0), [cartItems]);
   const cartTotal    = useMemo(() => cartItems.reduce((s,i) => s + Number(i.basePrice) * i.qty, 0), [cartItems]);
@@ -125,6 +136,24 @@ export default function App() {
 
   useEffect(() => { if (user) mergeGuestCart(); }, [user?.email]);
 
+  // Seed the initial history state so the first entry is navigable
+  useEffect(() => {
+    const p = new URLSearchParams(window.location.search).get("page") || "home";
+    window.history.replaceState({ page: p, pageData: null }, "", window.location.href);
+  }, []);
+
+  // Browser back / forward
+  useEffect(() => {
+    const onPop = (e: PopStateEvent) => {
+      const p = e.state?.page || "home";
+      setPage(p);
+      setPageData(e.state?.pageData ?? null);
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    };
+    window.addEventListener("popstate", onPop);
+    return () => window.removeEventListener("popstate", onPop);
+  }, []);
+
   const toggleWishlist = useCallback(async (productId: any) => {
     const already = wishIds.includes(productId);
     setWishIds(prev => already ? prev.filter(x => x !== productId) : [...prev, productId]);
@@ -168,6 +197,15 @@ export default function App() {
     else localStorage.removeItem("peanut_user");
   }, [user]);
 
+  // When a seller logs in (or page loads with seller session), redirect to seller hub
+  useEffect(() => {
+    if (user?.role === "SELLER" && SELLER_BLOCKED.has(page)) {
+      setPage("seller");
+      setPageData(null);
+      window.history.replaceState({ page: "seller", pageData: null }, "", "/?page=seller");
+    }
+  }, [user?.role]);
+
   useEffect(() => { document.documentElement.classList.toggle("dark", darkMode); }, [darkMode]);
 
   return (
@@ -181,29 +219,42 @@ export default function App() {
               <NotifPanel />
               <ToastMessage />
               <div className="flex">
-                <CategorySidebar />
+                {user?.role !== "SELLER" && <CategorySidebar />}
                 <main className="flex-1 min-w-0">
-                  {page === "home"       && <HomePage />}
-                  {page === "products"   && <ProductsPage />}
-                  {page === "product"    && <ProductDetailPage />}
-                  {page === "cart"       && <CartPage />}
-                  {page === "checkout"   && <CheckoutPage />}
-                  {page === "orders"     && <OrdersPage />}
-                  {page === "order"      && <OrderDetailPage />}
-                  {page === "track"      && <TrackPage />}
-                  {page === "role-select" && <RoleSelectPage />}
-                  {page === "login"      && <LoginPage />}
-                  {page === "register"   && <RegisterPage />}
-                  {page === "forgot"     && <ForgotPage />}
-                  {page === "profile"    && <ProfilePage />}
-                  {page === "wishlist"   && <WishlistPage />}
-                  {page === "seller"     && <SellerDashPage />}
-                  {page === "onboarding" && <SellerOnboardPage />}
-                  {page === "admin"         && <AdminPage />}
-                  {page === "customer-care" && <CustomerCarePage />}
-                  {page === "about"         && <AboutUsPage />}
-                  {page === "reviews"       && <MyReviewsPage />}
-                  {page === "returns"       && <MyReturnsPage />}
+                  {/* Seller: only show seller hub and shared pages */}
+                  {user?.role === "SELLER" ? (
+                    <>
+                      {(page === "seller" || SELLER_BLOCKED.has(page) || page === "profile") && <SellerDashPage />}
+                      {page === "customer-care" && <CustomerCarePage />}
+                      {page === "about"         && <AboutUsPage />}
+                      {page === "store"         && <SellerStorePage />}
+                    </>
+                  ) : (
+                    <>
+                      {page === "home"       && <HomePage />}
+                      {page === "products"   && <ProductsPage />}
+                      {page === "product"    && <ProductDetailPage />}
+                      {page === "cart"       && <CartPage />}
+                      {page === "checkout"   && <CheckoutPage />}
+                      {page === "orders"     && <OrdersPage />}
+                      {page === "order"      && <OrderDetailPage />}
+                      {page === "track"      && <TrackPage />}
+                      {page === "role-select" && <RoleSelectPage />}
+                      {page === "login"      && <LoginPage />}
+                      {page === "register"   && <RegisterPage />}
+                      {page === "forgot"     && <ForgotPage />}
+                      {page === "profile"    && <ProfilePage />}
+                      {page === "wishlist"   && <WishlistPage />}
+                      {page === "seller"     && <SellerDashPage />}
+                      {page === "onboarding" && <SellerOnboardPage />}
+                      {page === "admin"         && <AdminPage />}
+                      {page === "customer-care" && <CustomerCarePage />}
+                      {page === "about"         && <AboutUsPage />}
+                      {page === "reviews"       && <MyReviewsPage />}
+                      {page === "returns"       && <MyReturnsPage />}
+                      {page === "store"         && <SellerStorePage />}
+                    </>
+                  )}
                 </main>
               </div>
               <Footer />

@@ -86,62 +86,73 @@ export function Navbar() {
         </button>
 
         {/* Logo */}
-        <button onClick={() => nav("home")} className="flex items-center shrink-0">
+        <button onClick={() => nav(user?.role === "SELLER" ? "seller" : "home")} className="flex items-center shrink-0">
           <span className="text-2xl font-black tracking-tight"
             style={{ fontFamily: "var(--font-playfair,'Poppins',system-ui,sans-serif)", color: CHARCOAL }}>
             Pea<span style={{ color: GOLD }}>Nut</span>
           </span>
         </button>
 
-        {/* Search trigger */}
-        <button
-          onClick={() => setSearchOpen(true)}
-          className="flex-1 max-w-xl mx-2 flex items-center gap-2 rounded-full px-4 py-2 bg-white dark:bg-[#242018] text-left transition-all duration-200 hover:border-[#C68313]"
-          style={{ border: `1.5px solid ${BORDER}` }}
-          aria-label="Open search"
-        >
-          <svg className="w-4 h-4 shrink-0" style={{ color: MUTED }} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
-          </svg>
-          <span className="flex-1 text-sm min-w-0 truncate" style={{ color: MUTED }}>
-            Search products, brands, categories
-          </span>
-          <kbd className="hidden sm:flex items-center gap-0.5 text-[10px] font-mono px-1.5 py-0.5 rounded-md shrink-0"
-            style={{ backgroundColor: "#F3EDE0", color: MUTED, border: `1px solid ${BORDER}` }}>
-            <span>⌘</span><span>K</span>
-          </kbd>
-        </button>
+        {/* Search trigger — hidden for sellers */}
+        {user?.role !== "SELLER" && (
+          <button
+            onClick={() => setSearchOpen(true)}
+            className="flex-1 max-w-xl mx-2 flex items-center gap-2 rounded-full px-4 py-2 bg-white dark:bg-[#242018] text-left transition-all duration-200 hover:border-[#C68313]"
+            style={{ border: `1.5px solid ${BORDER}` }}
+            aria-label="Open search"
+          >
+            <svg className="w-4 h-4 shrink-0" style={{ color: MUTED }} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+            </svg>
+            <span className="flex-1 text-sm min-w-0 truncate" style={{ color: MUTED }}>
+              Search products, brands, categories
+            </span>
+            <kbd className="hidden sm:flex items-center gap-0.5 text-[10px] font-mono px-1.5 py-0.5 rounded-md shrink-0"
+              style={{ backgroundColor: "#F3EDE0", color: MUTED, border: `1px solid ${BORDER}` }}>
+              <span>⌘</span><span>K</span>
+            </kbd>
+          </button>
+        )}
+
+        {/* Seller hub label */}
+        {user?.role === "SELLER" && (
+          <span className="flex-1 text-sm font-semibold px-2" style={{ color: MUTED }}>Seller Hub</span>
+        )}
 
         {/* Right actions */}
         <div className="flex items-center gap-2 shrink-0">
 
-          {/* Cart */}
-          <button onClick={() => setCartOpen(true)}
-            className="relative w-9 h-9 rounded-full border-2 flex items-center justify-center transition-all duration-300 hover:bg-surface-warm"
-            style={{ borderColor: GOLD, color: GOLD }} aria-label={`Cart (${cartCount} items)`}>
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"/>
-            </svg>
-            {cartCount > 0 && (
-              <span className="absolute -top-1 -right-1 w-4 h-4 text-white text-[9px] font-black rounded-full flex items-center justify-center bg-red-500">
-                {cartCount > 99 ? "99+" : cartCount}
-              </span>
-            )}
-          </button>
+          {/* Cart — hidden for sellers */}
+          {user?.role !== "SELLER" && (
+            <button onClick={() => setCartOpen(true)}
+              className="relative w-9 h-9 rounded-full border-2 flex items-center justify-center transition-all duration-300 hover:bg-surface-warm"
+              style={{ borderColor: GOLD, color: GOLD }} aria-label={`Cart (${cartCount} items)`}>
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"/>
+              </svg>
+              {cartCount > 0 && (
+                <span className="absolute -top-1 -right-1 w-4 h-4 text-white text-[9px] font-black rounded-full flex items-center justify-center bg-red-500">
+                  {cartCount > 99 ? "99+" : cartCount}
+                </span>
+              )}
+            </button>
+          )}
 
-          {/* Wishlist */}
-          <button onClick={() => nav("wishlist")}
-            className="relative w-9 h-9 rounded-full border-2 flex items-center justify-center transition-all duration-300 hover:bg-surface-warm"
-            style={{ borderColor: GOLD, color: GOLD }} aria-label={`Wishlist (${wishIds.length})`}>
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/>
-            </svg>
-            {wishIds.length > 0 && (
-              <span className="absolute -top-1 -right-1 w-4 h-4 text-white text-[9px] font-black rounded-full flex items-center justify-center bg-red-500">
-                {wishIds.length}
-              </span>
-            )}
-          </button>
+          {/* Wishlist — hidden for sellers */}
+          {user?.role !== "SELLER" && (
+            <button onClick={() => nav("wishlist")}
+              className="relative w-9 h-9 rounded-full border-2 flex items-center justify-center transition-all duration-300 hover:bg-surface-warm"
+              style={{ borderColor: GOLD, color: GOLD }} aria-label={`Wishlist (${wishIds.length})`}>
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/>
+              </svg>
+              {wishIds.length > 0 && (
+                <span className="absolute -top-1 -right-1 w-4 h-4 text-white text-[9px] font-black rounded-full flex items-center justify-center bg-red-500">
+                  {wishIds.length}
+                </span>
+              )}
+            </button>
+          )}
 
           {/* Theme toggle */}
           <button
@@ -219,34 +230,47 @@ export function Navbar() {
                       </div>
                     </div>
 
-                    {/* Quick stats */}
-                    <div className="grid grid-cols-2 gap-2 mt-4">
-                      {[
-                        { label: "Wishlist", value: wishIds.length, icon: (
-                          <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/>
-                          </svg>
-                        )},
-                        { label: "Cart items", value: cartCount, icon: (
-                          <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"/>
-                          </svg>
-                        )},
-                      ].map(s => (
-                        <div key={s.label} className="flex items-center gap-2 rounded-xl px-3 py-2" style={{ backgroundColor: "rgba(255,255,255,0.07)" }}>
-                          <span style={{ color: GOLD }}>{s.icon}</span>
-                          <div>
-                            <p className="text-xs font-black text-white">{s.value}</p>
-                            <p className="text-[10px]" style={{ color: "#B8A882" }}>{s.label}</p>
+                    {/* Quick stats — only for customers */}
+                    {user.role !== "SELLER" && (
+                      <div className="grid grid-cols-2 gap-2 mt-4">
+                        {[
+                          { label: "Wishlist", value: wishIds.length, icon: (
+                            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/>
+                            </svg>
+                          )},
+                          { label: "Cart items", value: cartCount, icon: (
+                            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"/>
+                            </svg>
+                          )},
+                        ].map(s => (
+                          <div key={s.label} className="flex items-center gap-2 rounded-xl px-3 py-2" style={{ backgroundColor: "rgba(255,255,255,0.07)" }}>
+                            <span style={{ color: GOLD }}>{s.icon}</span>
+                            <div>
+                              <p className="text-xs font-black text-white">{s.value}</p>
+                              <p className="text-[10px]" style={{ color: "#B8A882" }}>{s.label}</p>
+                            </div>
                           </div>
-                        </div>
-                      ))}
-                    </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
 
                   {/* Nav items */}
                   <div className="py-2">
-                    {[
+                    {(user.role === "SELLER" ? [
+                      { label: "Seller Hub", sub: "Manage your store & orders", page: "seller", icon: (
+                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"/>
+                        </svg>
+                      )},
+                      { label: "Help & Support", sub: "Seller guides & FAQs", page: "customer-care", icon: (
+                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                      )},
+                    ] : [
                       { label: "Manage My Account", sub: "Edit your info & preferences", page: "profile", icon: (
                         <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
                           <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
@@ -272,17 +296,12 @@ export function Navbar() {
                           <path strokeLinecap="round" strokeLinejoin="round" d="M16 15v-1a4 4 0 00-4-4H8m0 0l3 3m-3-3l3-3m9 14V5a2 2 0 00-2-2H6a2 2 0 00-2 2v16l4-2 2 1 2-1 2 1 2-1 4 2z"/>
                         </svg>
                       )},
-                      ...(user.role === "SELLER" ? [{ label: "Seller Hub", sub: "Manage your store", page: "seller", icon: (
-                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"/>
-                        </svg>
-                      )}] : []),
                       ...(["ADMIN","SUPER_ADMIN"].includes(user.role) ? [{ label: "Admin Panel", sub: "Site management", page: "admin", icon: (
                         <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
                           <path strokeLinecap="round" strokeLinejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
                         </svg>
                       )}] : []),
-                    ].map(item => (
+                    ]).map(item => (
                       <button
                         key={item.page}
                         onClick={() => { nav(item.page); setProfileOpen(false); }}
@@ -500,7 +519,7 @@ export function Navbar() {
                 Stay signed in
               </button>
               <button
-                onClick={() => { setUser(null); setSignOutConfirm(false); nav("home"); }}
+                onClick={() => { const wasSeller = user?.role === "SELLER"; setUser(null); setSignOutConfirm(false); nav(wasSeller ? "login" : "home"); }}
                 className="py-3 rounded-xl text-sm font-bold text-white transition-all duration-150 hover:opacity-90 active:scale-[0.98]"
                 style={{ backgroundColor: "#EF4444" }}
               >

@@ -2,9 +2,76 @@
 import { useState, useEffect } from "react";
 import { cn, formatPrice, timeAgo, MOCK_ORDERS, useUIStore, apiGet } from "@/app/lib/store";
 
+const GOLD = "#C68313";
+
+function ReviewForm({ item, orderId, onDone }: { item: any; orderId: string; onDone: () => void }) {
+ const { showToast } = useUIStore();
+ const [rating, setRating] = useState(0);
+ const [hover, setHover] = useState(0);
+ const [title, setTitle] = useState("");
+ const [body, setBody] = useState("");
+ const [submitting, setSubmitting] = useState(false);
+ const [done, setDone] = useState(false);
+
+ if (done) return (
+  <div className="flex items-center gap-2 text-sm text-green-600 font-semibold py-2">
+   ✅ Review submitted — thank you!
+  </div>
+ );
+
+ const submit = async () => {
+  if (!rating) { showToast("Please select a star rating", "error"); return; }
+  setSubmitting(true);
+  try {
+   const res = await fetch("/api/reviews", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ productId: item.productId ?? item.product?.id, orderId, rating, title: title.trim() || undefined, body: body.trim() || undefined }),
+   });
+   const d = await res.json();
+   if (!res.ok) { showToast(d.error ?? "Failed to submit review", "error"); setSubmitting(false); return; }
+   setDone(true);
+   showToast("Review submitted!");
+   onDone();
+  } catch {
+   showToast("Network error", "error");
+  }
+  setSubmitting(false);
+ };
+
+ return (
+  <div className="mt-3 pt-3 border-t border-gray-100 dark:border-gray-800 space-y-2">
+   <p className="text-xs font-bold text-gray-700 dark:text-gray-300">Write a review</p>
+   {/* Stars */}
+   <div className="flex gap-1">
+    {[1,2,3,4,5].map(s => (
+     <button key={s}
+      onMouseEnter={() => setHover(s)} onMouseLeave={() => setHover(0)}
+      onClick={() => setRating(s)}
+      className="text-xl transition-transform hover:scale-110"
+      style={{ color: s <= (hover || rating) ? GOLD : "#D1D5DB" }}
+     >★</button>
+    ))}
+   </div>
+   <input value={title} onChange={e => setTitle(e.target.value)} placeholder="Review title (optional)"
+    className="w-full px-3 py-1.5 text-xs rounded-lg outline-none"
+    style={{ border: "1px solid #E5E7EB", color: "var(--color-heading)", backgroundColor: "var(--color-bg)" }} />
+   <textarea value={body} onChange={e => setBody(e.target.value)} placeholder="Share your experience…" rows={2}
+    className="w-full px-3 py-1.5 text-xs rounded-lg outline-none resize-none"
+    style={{ border: "1px solid #E5E7EB", color: "var(--color-heading)", backgroundColor: "var(--color-bg)" }} />
+   <button onClick={submit} disabled={submitting || !rating}
+    className="px-4 py-1.5 rounded-lg text-xs font-bold text-white disabled:opacity-50"
+    style={{ backgroundColor: GOLD }}>
+    {submitting ? "Submitting…" : "Submit Review"}
+   </button>
+  </div>
+ );
+}
+
 export function OrderDetailPage() {
  const { pageData, nav } = useUIStore();
  const [data, setData] = useState<any>(null);
+ const [reviewedItems, setReviewedItems] = useState<Set<string>>(new Set());
 
  useEffect(() => {
  if (!pageData) return;
@@ -63,8 +130,12 @@ export function OrderDetailPage() {
  </div>
  <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 p-5 mb-5">
  <h2 className="font-black text-gray-900 dark:text-white mb-4">Order Items</h2>
- {order.items?.map((item: any, i: number) => (
- <div key={i} className="flex gap-3 py-3 border-b border-gray-50 dark:border-gray-800 last:border-0">
+ {order.items?.map((item: any, i: number) => {
+ const itemKey = item.productId ?? item.product?.id ?? String(i);
+ const reviewed = reviewedItems.has(itemKey);
+ return (
+ <div key={i} className="py-3 border-b border-gray-50 dark:border-gray-800 last:border-0">
+ <div className="flex gap-3">
  <div className="w-14 h-14 bg-gray-100 dark:bg-gray-800 rounded-xl flex items-center justify-center text-3xl shrink-0">{item.emoji ?? "🛍️"}</div>
  <div className="flex-1 min-w-0">
  <p className="font-semibold text-sm text-gray-900 dark:text-white">{item.product?.name ?? item.name}</p>
@@ -72,7 +143,15 @@ export function OrderDetailPage() {
  </div>
  <p className="font-black text-violet-600">{formatPrice(Number(item.total ?? item.price ?? 0))}</p>
  </div>
- ))}
+ {order.status === "DELIVERED" && !reviewed && (
+  <ReviewForm item={item} orderId={order.id} onDone={() => setReviewedItems(prev => new Set([...prev, itemKey]))} />
+ )}
+ {order.status === "DELIVERED" && reviewed && (
+  <p className="text-xs text-green-600 font-semibold mt-2">✅ Review submitted</p>
+ )}
+ </div>
+ );
+ })}
  <div className="pt-3 space-y-1.5 text-sm">
  <div className="flex justify-between"><span className="text-gray-500">Subtotal</span><span className="font-semibold dark:text-white">{formatPrice(Number(order.subtotal??order.total??0))}</span></div>
  <div className="flex justify-between"><span className="text-gray-500">Shipping</span><span className={cn("font-semibold", Number(order.shippingCost??0)===0?"text-green-600":"dark:text-white")}>{Number(order.shippingCost??0)===0?"Free 🎉":formatPrice(Number(order.shippingCost??0))}</span></div>

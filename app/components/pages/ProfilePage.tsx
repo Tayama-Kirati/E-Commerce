@@ -631,8 +631,37 @@ function PaymentTab({ nav }: { nav: () => void }) {
 // ── Settings / personal info ──────────────────────────────────────────────────
 function SettingsTab({ user, nav }: { user: any; nav: () => void }) {
   const { showToast } = useUIStore();
-  const [form, setForm] = useState({ name: user?.name ?? "", email: user?.email ?? "", phone: "", city: "Kathmandu" });
+  const [saving, setSaving] = useState(false);
+  const [form, setForm] = useState({
+    name:      user?.name      ?? "",
+    email:     user?.email     ?? "",
+    phone:     user?.phone     ?? "",
+    city:      "Kathmandu",
+    birthDate: user?.birthDate
+      ? new Date(user.birthDate).toISOString().slice(0, 10)
+      : "",
+  });
   const s = (k: string, v: string) => setForm(p => ({ ...p, [k]: v }));
+
+  const saveProfile = async () => {
+    setSaving(true);
+    try {
+      const res = await fetch("/api/user/profile", {
+        method:  "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          phone:     form.phone  || null,
+          birthDate: form.birthDate || null,
+        }),
+      });
+      const d = await res.json();
+      if (!res.ok) { showToast(d.error ?? "Failed to save", "error"); }
+      else showToast("Profile saved!");
+    } catch { showToast("Network error", "error"); }
+    setSaving(false);
+  };
+
+  const today = new Date().toISOString().slice(0, 10);
 
   return (
     <div>
@@ -643,27 +672,61 @@ function SettingsTab({ user, nav }: { user: any; nav: () => void }) {
             Personal Information
           </h2>
           <div className="space-y-4 max-w-lg">
+            {/* Read-only fields */}
             {[
-              { k:"name",  label:"Full Name",  type:"text"  },
-              { k:"email", label:"Email",      type:"email" },
-              { k:"phone", label:"Phone",      type:"tel"   },
-              { k:"city",  label:"City",       type:"text"  },
+              { k:"name",  label:"Full Name",  type:"text",  readOnly: true },
+              { k:"email", label:"Email",      type:"email", readOnly: true },
             ].map(f => (
               <div key={f.k}>
                 <label className="block text-xs font-bold mb-1" style={{ color: CHARCOAL }}>{f.label}</label>
-                <input type={f.type} value={(form as any)[f.k]} onChange={e => s(f.k, e.target.value)}
+                <input type={f.type} value={(form as any)[f.k]}
+                  readOnly
                   className="w-full px-4 py-2.5 rounded-xl text-sm outline-none"
-                  style={{ border: `1.5px solid ${BORDER}`, color: CHARCOAL }}
-                  onFocus={e => e.target.style.borderColor = GOLD}
-                  onBlur={e => e.target.style.borderColor = BORDER} />
+                  style={{ border: `1.5px solid ${BORDER}`, color: CHARCOAL, opacity: 0.6, cursor: "not-allowed" }} />
               </div>
             ))}
-            <button onClick={() => showToast("Profile saved!")}
-              className="px-6 py-2.5 text-sm font-bold text-white rounded-xl"
+
+            {/* Phone */}
+            <div>
+              <label className="block text-xs font-bold mb-1" style={{ color: CHARCOAL }}>Phone</label>
+              <input type="tel" value={form.phone} onChange={e => s("phone", e.target.value)}
+                placeholder="+977-98XXXXXXXX"
+                className="w-full px-4 py-2.5 rounded-xl text-sm outline-none"
+                style={{ border: `1.5px solid ${BORDER}`, color: CHARCOAL }}
+                onFocus={e => e.target.style.borderColor = GOLD}
+                onBlur={e => e.target.style.borderColor = BORDER} />
+            </div>
+
+            {/* Birthdate */}
+            <div>
+              <label className="block text-xs font-bold mb-1" style={{ color: CHARCOAL }}>
+                Date of Birth
+                <span className="ml-1.5 text-[10px] font-normal" style={{ color: MUTED }}>(optional)</span>
+              </label>
+              <input
+                type="date"
+                value={form.birthDate}
+                onChange={e => s("birthDate", e.target.value)}
+                max={today}
+                className="w-full px-4 py-2.5 rounded-xl text-sm outline-none"
+                style={{ border: `1.5px solid ${BORDER}`, color: form.birthDate ? CHARCOAL : MUTED }}
+                onFocus={e => e.target.style.borderColor = GOLD}
+                onBlur={e => e.target.style.borderColor = BORDER}
+              />
+              {form.birthDate && (() => {
+                const age = Math.floor((Date.now() - new Date(form.birthDate).getTime()) / (365.25 * 24 * 60 * 60 * 1000));
+                return <p className="text-[11px] mt-1" style={{ color: MUTED }}>Age: {age} years</p>;
+              })()}
+            </div>
+
+            <button
+              onClick={saveProfile}
+              disabled={saving}
+              className="px-6 py-2.5 text-sm font-bold text-white rounded-xl disabled:opacity-50"
               style={{ backgroundColor: GOLD }}
-              onMouseEnter={e => e.currentTarget.style.backgroundColor = "#9B6210"}
+              onMouseEnter={e => { if (!saving) e.currentTarget.style.backgroundColor = "#9B6210"; }}
               onMouseLeave={e => e.currentTarget.style.backgroundColor = GOLD}>
-              Save Changes
+              {saving ? "Saving…" : "Save Changes"}
             </button>
           </div>
         </div>
