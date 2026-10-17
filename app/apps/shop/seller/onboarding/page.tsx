@@ -26,6 +26,7 @@ import { cn } from "@/app/lib/utils";
 import { toast } from "react-hot-toast";
 
 
+import { EmojiIcon } from "@/app/components/ui/EmojiIcon";
 const Step1Schema = z.object({
  storeName: z.string().min(3, "At least 3 characters").max(100),
  storeDescription: z.string().min(20, "At least 20 characters").max(1000),
@@ -171,7 +172,7 @@ export default function SellerOnboardingPage() {
  <CheckCircle className="w-12 h-12 text-green-600" />
  </div>
  <h1 className="text-3xl font-black text-gray-900 dark:text-white mb-3">
- Application Submitted! 🎉
+ Application Submitted! <EmojiIcon emoji="🎉" />
  </h1>
  <p className="text-gray-500 mb-2 text-lg">
  Welcome to the PeaNut seller community!
@@ -257,7 +258,7 @@ export default function SellerOnboardingPage() {
  key={b.label}
  className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400 bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-xl px-4 py-2"
  >
- <span className="text-blue-600">{b.icon}</span>
+ <span className="text-blue-600"><EmojiIcon emoji={b.icon} /></span>
  {b.label}
  </div>
  ))}
@@ -279,7 +280,7 @@ export default function SellerOnboardingPage() {
  : "bg-white dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-700 text-gray-400",
  )}
  >
- {step > s.id ? <CheckCircle className="w-5 h-5" /> : s.icon}
+ {step > s.id ? <CheckCircle className="w-5 h-5" /> : <EmojiIcon emoji={s.icon} />}
  </div>
  <span
  className={cn(
@@ -453,7 +454,7 @@ export default function SellerOnboardingPage() {
  </FormRow>
  <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-2xl p-4">
  <p className="text-sm text-amber-700 dark:text-amber-400 font-medium">
- 💡 Sellers with PAN/VAT numbers get higher trust badges and
+ <EmojiIcon emoji="💡" /> Sellers with PAN/VAT numbers get higher trust badges and
  are prioritized in search results.
  </p>
  </div>
@@ -509,7 +510,7 @@ export default function SellerOnboardingPage() {
  </Field>
  <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-2xl p-4">
  <p className="text-sm text-blue-700 dark:text-blue-400 font-medium">
- 🔒 Your bank details are encrypted and only used for
+ <EmojiIcon emoji="🔒" /> Your bank details are encrypted and only used for
  payouts. We never charge without your permission.
  </p>
  </div>

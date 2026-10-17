@@ -1,6 +1,7 @@
 "use client";
 import { useUIStore } from "@/app/lib/store";
 
+import { EmojiIcon } from "@/app/components/ui/EmojiIcon";
 const GOLD     = "#C68313";
 const CHARCOAL = "var(--color-heading)";
 const MUTED    = "var(--color-muted)";
@@ -55,7 +56,7 @@ export function AboutUsPage() {
             <ul className="divide-y" style={{ borderColor: BORDER }}>
               {TRUST_BADGES.map(item => (
                 <li key={item.t} className="flex items-center gap-4 px-6 py-4">
-                  <span className="text-3xl shrink-0">{item.icon}</span>
+                  <span className="text-3xl shrink-0"><EmojiIcon emoji={item.icon} /></span>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-bold" style={{ color: CHARCOAL }}>{item.t}</p>
                     <p className="text-xs mt-0.5" style={{ color: MUTED }}>{item.s}</p>

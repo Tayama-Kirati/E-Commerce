@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/lib/auth";
 import { prisma } from "@/app/lib/prisma";
+import { getSettings } from "@/app/lib/settings";
 import { redis } from "@/app/lib/redis";
 import { z } from "zod";
 
@@ -24,12 +25,14 @@ export async function GET(req: NextRequest) {
     const seller = searchParams.get("seller") || undefined;
 
     const cacheKey = `products:${req.url}`;
-    const cached = await redis.get(cacheKey);
-    if (cached) {
-      return NextResponse.json(JSON.parse(cached as string), {
-        headers: { "X-Cache": "HIT" },
-      });
-    }
+    try {
+      const cached = await redis.get(cacheKey);
+      if (cached) {
+        return NextResponse.json(JSON.parse(cached as string), {
+          headers: { "X-Cache": "HIT" },
+        });
+      }
+    } catch { /* cache miss, continue to DB */ }
 
     const where: any = { isActive: true };
     if (search) {
@@ -118,7 +121,7 @@ export async function GET(req: NextRequest) {
       totalPages: Math.ceil(total / limit),
     };
 
-    await redis.setex(cacheKey, 120, JSON.stringify(result));
+    try { await redis.setex(cacheKey, 120, JSON.stringify(result)); } catch { /* non-fatal */ }
     return NextResponse.json(result);
   } catch (error) {
     console.error("[GET /api/products]", error);
@@ -146,7 +149,7 @@ const CreateProductSchema = z.object({
   tags: z.array(z.string()).default([]),
   images: z
     .array(z.object({
-      url: z.string().url(),
+      url: z.string().min(1),
       alt: z.string().max(200).optional(),
       publicId: z.string().optional(),
     }))
@@ -170,9 +173,13 @@ export async function POST(req: NextRequest) {
         { status: 403 },
       );
     }
+    if (seller.status === "SUSPENDED" || seller.status === "BANNED") {
+      return NextResponse.json({ error: "Your store is suspended — contact support" }, { status: 403 });
+    }
 
     const body = await req.json();
     const data = CreateProductSchema.parse(body);
+    if (data.isFlashSale && !(await getSettings()).flashSaleEnabled) data.isFlashSale = false;
 
     const base = data.name
       .toLowerCase()
@@ -222,7 +229,7 @@ export async function POST(req: NextRequest) {
       });
     });
 
-    await redis.del(`products:*`);
+    try { await redis.del(`products:*`); } catch { /* non-fatal */ }
 
     return NextResponse.json({ product }, { status: 201 });
   } catch (error) {
@@ -232,7 +239,11 @@ export async function POST(req: NextRequest) {
         { status: 422 },
       );
     }
-    console.error("[POST /api/products]", error);
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+    const msg = error instanceof Error ? error.message : String(error);
+    console.error("[POST /api/products]", msg);
+    return NextResponse.json(
+      { error: process.env.NODE_ENV === "development" ? msg : "Internal server error" },
+      { status: 500 },
+    );
   }
 }

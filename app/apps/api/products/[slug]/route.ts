@@ -4,6 +4,8 @@ import { authOptions } from "@/app/lib/auth";
 import { prisma } from "@/app/lib/prisma";
 import { redis } from "@/app/lib/redis";
 import { z } from "zod";
+import { notifyBackInStock } from "@/app/lib/orders";
+import { getSettings } from "@/app/lib/settings";
 
 type Params = { params: Promise<{ slug: string }> };
 
@@ -12,12 +14,10 @@ export async function GET(_req: NextRequest, { params }: Params) {
     const { slug } = await params;
     const cacheKey = `product:${slug}`;
 
-    const cached = await redis.get(cacheKey);
-    if (cached) {
-      return NextResponse.json(JSON.parse(cached as string), {
-        headers: { "X-Cache": "HIT" },
-      });
-    }
+    try {
+      const cached = await redis.get(cacheKey);
+      if (cached) return NextResponse.json(JSON.parse(cached as string), { headers: { "X-Cache": "HIT" } });
+    } catch { /* cache miss, continue to DB */ }
 
     const product = await prisma.product.findUnique({
       where: { slug, isActive: true },
@@ -101,7 +101,7 @@ export async function GET(_req: NextRequest, { params }: Params) {
       related,
     };
 
-    await redis.setex(cacheKey, 300, JSON.stringify(result));
+    try { await redis.setex(cacheKey, 300, JSON.stringify(result)); } catch { /* non-fatal */ }
     return NextResponse.json(result);
   } catch (error) {
     console.error("[GET /api/products/[slug]]", error);
@@ -125,6 +125,7 @@ const UpdateProductSchema = z.object({
   flashSaleEndsAt: z.string().nullable().optional(),
   freeShipping: z.boolean().optional(),
   isActive: z.boolean().optional(),
+  lowStockThreshold: z.number().int().min(0).max(10000).optional(),
   tags: z.array(z.string()).optional(),
 });
 
@@ -136,8 +137,9 @@ export async function PUT(req: NextRequest, { params }: Params) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const product = await prisma.product.findUnique({
-      where: { slug },
+    // The admin pages address products by id, the seller pages by slug
+    const product = await prisma.product.findFirst({
+      where: { OR: [{ slug }, { id: slug }] },
       include: { seller: true },
     });
     if (!product) {
@@ -166,9 +168,19 @@ export async function PUT(req: NextRequest, { params }: Params) {
       }
 
       const { tags: _t, ...rest } = data;
+      if (rest.isFlashSale && !isAdmin && !(await getSettings()).flashSaleEnabled) {
+        throw new z.ZodError([{ code: "custom", path: ["isFlashSale"], message: "Flash sales are currently disabled" }]);
+      }
+      // Rejected products can only be re-listed after an admin approves them
+      if (rest.isActive && product.status === "REJECTED" && !isAdmin) {
+        throw new z.ZodError([{ code: "custom", path: ["isActive"], message: "This product was rejected by moderation — edit it and contact support to re-list" }]);
+      }
       return tx.product.update({
         where: { id: product.id },
-        data: rest,
+        data: {
+          ...rest,
+          ...(rest.isActive !== undefined && { status: rest.isActive ? "ACTIVE" : "INACTIVE" }),
+        },
         include: {
           images: { orderBy: { order: "asc" } },
           variants: true,
@@ -177,8 +189,12 @@ export async function PUT(req: NextRequest, { params }: Params) {
       });
     });
 
-    await redis.del(`product:${slug}`);
-    await redis.del(`products:*`);
+    try { await redis.del(`product:${product.slug}`); } catch { /* non-fatal */ }
+
+    // Restocked (or re-listed) — tell everyone waiting for it
+    if (updated.stock > 0 && updated.isActive && (product.stock <= 0 || !product.isActive)) {
+      notifyBackInStock(product.id).catch((err) => console.error("[back-in-stock]", err));
+    }
 
     return NextResponse.json({ product: updated });
   } catch (error) {
@@ -203,8 +219,9 @@ export async function DELETE(req: NextRequest, { params }: Params) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const product = await prisma.product.findUnique({
-      where: { slug },
+    // The admin pages address products by id, the seller pages by slug
+    const product = await prisma.product.findFirst({
+      where: { OR: [{ slug }, { id: slug }] },
       include: { seller: true },
     });
     if (!product) {
@@ -220,11 +237,10 @@ export async function DELETE(req: NextRequest, { params }: Params) {
 
     await prisma.product.update({
       where: { id: product.id },
-      data: { isActive: false },
+      data: { isActive: false, status: "INACTIVE" },
     });
 
-    await redis.del(`product:${slug}`);
-    await redis.del(`products:*`);
+    try { await redis.del(`product:${product.slug}`); } catch { /* non-fatal */ }
 
     return NextResponse.json({ success: true });
   } catch (error) {

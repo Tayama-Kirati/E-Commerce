@@ -1,7 +1,9 @@
 "use client";
 import { useState, useEffect } from "react";
+import { signOut } from "next-auth/react";
 import { formatPrice, timeAgo, MOCK_ORDERS, useUIStore, useAuthStore, apiGet } from "@/app/lib/store";
 
+import { EmojiIcon } from "@/app/components/ui/EmojiIcon";
 const GOLD     = "#C68313";
 const CHARCOAL = "var(--color-heading)";
 const BORDER   = "#E8D5A8";
@@ -37,13 +39,13 @@ function Sidebar({ active, onNav, onSignOut, user }: { active: string; onNav: (t
           <button key={l.id} onClick={() => onNav(l.id)}
             className="flex items-center gap-3 w-full px-3 py-2.5 rounded-xl text-sm transition-all text-left"
             style={active === l.id ? { backgroundColor: IVORY, color: CHARCOAL, fontWeight: 600 } : { color: MUTED }}>
-            <span className="text-base w-5 text-center">{l.icon}</span>{l.label}
+            <span className="text-base w-5 text-center"><EmojiIcon emoji={l.icon} /></span>{l.label}
           </button>
         ))}
       </nav>
       <div className="mt-4 pt-4" style={{ borderTop: `1px solid ${BORDER}` }}>
         <button onClick={onSignOut} className="flex items-center gap-2 text-sm font-semibold" style={{ color: "#EF4444" }}>
-          <span>→</span> Sign out
+          <span><EmojiIcon emoji="→" /></span> Sign out
         </button>
       </div>
     </aside>
@@ -95,7 +97,7 @@ export function OrdersPage() {
     nav("profile", { tab: t });
   };
 
-  const signOut = () => { setUser(null); nav("home"); showToast("Signed out"); };
+  const handleSignOut = () => { setUser(null); signOut({ redirect: false }); nav("home"); showToast("Signed out"); };
 
   const filtered = activeTab === "all" ? orders : orders.filter(o => o.status === activeTab);
 
@@ -103,7 +105,7 @@ export function OrdersPage() {
     <div style={{ backgroundColor: "#FDFBF7", minHeight: "100vh" }}>
       <div className="max-w-7xl mx-auto px-4 py-6">
         <div className="grid grid-cols-1 lg:grid-cols-[260px_1fr] gap-6">
-          <Sidebar active="orders" onNav={handleNav} onSignOut={signOut} user={user} />
+          <Sidebar active="orders" onNav={handleNav} onSignOut={handleSignOut} user={user} />
 
           <div>
             {/* Header */}
@@ -140,7 +142,7 @@ export function OrdersPage() {
               </div>
             ) : filtered.length === 0 ? (
               <div className="bg-white rounded-2xl flex flex-col items-center justify-center py-24" style={{ border: `1px solid ${BORDER}` }}>
-                <div className="text-6xl mb-4">📭</div>
+                <div className="text-6xl mb-4"><EmojiIcon emoji="📭" /></div>
                 <h3 className="text-xl font-black mb-2" style={{ color: CHARCOAL, fontFamily: "var(--font-playfair,'Poppins',system-ui,sans-serif)" }}>
                   No orders found
                 </h3>
@@ -175,7 +177,7 @@ export function OrdersPage() {
                         </div>
                         <span className="text-[11px] font-black px-3 py-1 rounded-full flex items-center gap-1"
                           style={{ backgroundColor: cfg.bg, color: cfg.color }}>
-                          {cfg.icon} {cfg.label}
+                          <EmojiIcon emoji={cfg.icon} /> {cfg.label}
                         </span>
                       </div>
 
@@ -184,7 +186,7 @@ export function OrdersPage() {
                         <div className="flex items-center gap-4 mb-4">
                           <div className="w-14 h-14 rounded-xl flex items-center justify-center text-3xl shrink-0"
                             style={{ backgroundColor: IVORY }}>
-                            {firstItem?.emoji ?? "🛍️"}
+                            <EmojiIcon emoji={firstItem?.emoji ?? "🛍️"} />
                           </div>
                           <div className="flex-1 min-w-0">
                             <p className="font-semibold text-sm line-clamp-1" style={{ color: CHARCOAL }}>
@@ -206,7 +208,7 @@ export function OrdersPage() {
                             style={{ border: `1px solid ${BORDER}`, color: CHARCOAL }}
                             onMouseEnter={e => { e.currentTarget.style.borderColor = GOLD; e.currentTarget.style.color = GOLD; }}
                             onMouseLeave={e => { e.currentTarget.style.borderColor = BORDER; e.currentTarget.style.color = CHARCOAL; }}>
-                            👁 View details
+                            <EmojiIcon emoji="👁" /> View details
                           </button>
                           {order.trackingNumber && (
                             <button onClick={() => nav("track")}
@@ -214,14 +216,14 @@ export function OrdersPage() {
                               style={{ backgroundColor: "rgba(198,131,19,0.08)", border: `1px solid ${BORDER}`, color: GOLD }}
                               onMouseEnter={e => { e.currentTarget.style.backgroundColor = GOLD; e.currentTarget.style.color = "#fff"; }}
                               onMouseLeave={e => { e.currentTarget.style.backgroundColor = "rgba(198,131,19,0.08)"; e.currentTarget.style.color = GOLD; }}>
-                              🚚 Track
+                              <EmojiIcon emoji="🚚" /> Track
                             </button>
                           )}
                           {order.status === "DELIVERED" && (
                             <button onClick={() => showToast("Review feature coming soon!")}
                               className="flex items-center gap-1.5 px-4 py-2 text-xs font-semibold rounded-xl"
                               style={{ border: `1px solid ${BORDER}`, color: MUTED }}>
-                              ★ Review
+                              <EmojiIcon emoji="★" /> Review
                             </button>
                           )}
                           {["PENDING", "CONFIRMED"].includes(order.status) && (

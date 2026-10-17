@@ -1,90 +1,29 @@
-import { authOptions } from "@/app/lib/auth";
-import { prisma } from "@/app/lib/prisma";
-import { getServerSession } from "next-auth";
 import { NextRequest, NextResponse } from "next/server";
+import { requireUser, jsonError, readJson } from "@/app/lib/api";
+import { startKhaltiPayment, confirmKhaltiPayment, PaymentError } from "@/app/lib/payments";
+
+type Body = { action?: "verify"; orderId?: string; pidx?: string };
+
+// ─── POST /api/payments/khalti — { orderId } starts a payment, { action: "verify", orderId, pidx } confirms it ─
 
 export async function POST(req: NextRequest) {
- const body = await req.json();
- if (body.action === "verify") return verifyHandler(body);
- return initiateHandler(body);
-}
+  const body = (await readJson<Body>(req)) ?? {};
+  if (!body.orderId) return jsonError("orderId is required", 400);
 
-async function initiateHandler(body: { orderId: string }) {
- const session = await getServerSession(authOptions);
- if (!session?.user)
- return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  try {
+    if (body.action === "verify") {
+      // No session needed: Khalti's lookup API is the source of truth, and the pidx must match the order
+      if (!body.pidx) return jsonError("pidx is required", 400);
+      const { order } = await confirmKhaltiPayment(body.orderId, body.pidx);
+      return NextResponse.json({ success: true, order: { id: order.id, orderNumber: order.orderNumber } });
+    }
 
- const { orderId } = body;
- const order = await prisma.order.findUnique({
- where: { id: orderId, userId: session.user.id },
- include: { user: true },
- });
- if (!order)
- return NextResponse.json({ error: "Order not found" }, { status: 404 });
-
- const { initiateKhaltiPayment } = await import("@/app/lib/khalti");
- const payment = await initiateKhaltiPayment({
- orderId: order.id,
- amount: Number(order.total) * 100,
- orderName: `PeaNut Order ${order.orderNumber}`,
- returnUrl: `${process.env.NEXTAUTH_URL}/checkout/verify?gateway=khalti&orderId=${order.id}`,
- customerName: order.user.name ?? "Customer",
- customerEmail: order.user.email!,
- customerPhone: order.user.phone ?? "9800000000",
- });
-
- await prisma.order.update({
- where: { id: order.id },
- data: { paymentRef: payment.pidx },
- });
-
- return NextResponse.json({ paymentUrl: payment.payment_url, pidx: payment.pidx });
-}
-
-async function verifyHandler(body: { pidx: string; orderId: string }) {
- const { pidx, orderId } = body;
- const { verifyKhaltiPayment } = await import("@/app/lib/khalti");
- const result = await verifyKhaltiPayment(pidx);
-
- if (result.status !== "Completed") {
- return NextResponse.json({ error: "Payment not completed" }, { status: 400 });
- }
-
- const existing = await prisma.order.findUnique({ where: { id: orderId } });
- if (!existing) {
- return NextResponse.json({ error: "Order not found" }, { status: 404 });
- }
-
- await prisma.order.update({
- where: { id: orderId },
- data: {
- paymentStatus: "COMPLETED",
- status: "CONFIRMED",
- paidAt: new Date(),
- paymentGateway: "khalti",
- },
- });
-
- if (existing.pointsEarned > 0) {
- await prisma.$transaction([
- prisma.user.update({
- where: { id: existing.userId },
- data: { loyaltyPoints: { increment: existing.pointsEarned } },
- }),
- prisma.loyaltyTransaction.create({
- data: {
- userId: existing.userId,
- orderId: existing.id,
- points: existing.pointsEarned,
- type: "EARNED",
- description: `Points earned for order ${existing.orderNumber}`,
- },
- }),
- ]);
- }
-
- return NextResponse.json({
- success: true,
- order: { id: existing.id, orderNumber: existing.orderNumber },
- });
+    const auth = await requireUser();
+    if (auth.error) return auth.error;
+    return NextResponse.json(await startKhaltiPayment(body.orderId, auth.user.id));
+  } catch (err) {
+    if (err instanceof PaymentError) return jsonError(err.message, err.status);
+    console.error("[khalti]", err);
+    return jsonError("Could not reach Khalti — please try again", 502);
+  }
 }

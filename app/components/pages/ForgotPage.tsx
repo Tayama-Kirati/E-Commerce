@@ -2,6 +2,7 @@
 import { useState } from "react";
 import { useUIStore, apiPost } from "@/app/lib/store";
 
+import { EmojiIcon } from "@/app/components/ui/EmojiIcon";
 export function ForgotPage() {
  const { nav } = useUIStore();
  const [email, setEmail] = useState("");
@@ -23,7 +24,7 @@ export function ForgotPage() {
  <div className="bg-white dark:bg-gray-900 rounded-3xl border border-gray-100 dark:border-gray-800 shadow-xl p-8">
  {!sent ? (
  <>
- <div className="w-14 h-14 bg-violet-100 dark:bg-violet-900/30 rounded-2xl flex items-center justify-center mb-5 text-3xl mx-auto">✉️</div>
+ <div className="w-14 h-14 bg-violet-100 dark:bg-violet-900/30 rounded-2xl flex items-center justify-center mb-5 text-3xl mx-auto"><EmojiIcon emoji="✉️" /></div>
  <h1 className="text-2xl font-black text-gray-900 dark:text-white mb-1 text-center">Forgot password?</h1>
  <p className="text-gray-400 text-sm mb-7 text-center">Enter your email and we'll send a reset link.</p>
  <form onSubmit={submit} className="space-y-4">
@@ -38,14 +39,14 @@ export function ForgotPage() {
  </>
  ) : (
  <>
- <div className="w-16 h-16 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mx-auto mb-5 text-3xl">✅</div>
+ <div className="w-16 h-16 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mx-auto mb-5 text-3xl"><EmojiIcon emoji="✅" /></div>
  <h2 className="text-xl font-black text-gray-900 dark:text-white mb-2 text-center">Check your inbox!</h2>
  <p className="text-gray-500 text-sm mb-7 text-center">If <strong>{email}</strong> is registered, we've sent a reset link. Check spam too.</p>
  <button onClick={() => setSent(false)} className="w-full text-sm text-violet-600 font-semibold hover:underline">Try a different email</button>
  </>
  )}
  <div className="mt-6 pt-5 border-t border-gray-100 dark:border-gray-800 flex justify-center">
- <button onClick={() => nav("login")} className="text-sm text-gray-500 hover:text-violet-600 transition-colors font-medium">← Back to Sign In</button>
+ <button onClick={() => nav("login")} className="text-sm text-gray-500 hover:text-violet-600 transition-colors font-medium"><EmojiIcon emoji="←" /> Back to Sign In</button>
  </div>
  </div>
  </div>

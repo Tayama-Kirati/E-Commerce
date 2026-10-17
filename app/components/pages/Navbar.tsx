@@ -1,8 +1,10 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
+import { signOut } from "next-auth/react";
 import { formatPrice, MOCK_CATEGORIES, MOCK_PRODUCTS, useCartStore, useUIStore, useAuthStore, useWishlistStore, useDebounce, apiGet } from "@/app/lib/store";
 import { useTheme } from "@/app/apps/providers/ThemeProvider";
 
+import { EmojiIcon } from "@/app/components/ui/EmojiIcon";
 const GOLD      = "#C68313";
 const GOLD_DARK = "#9B6210";
 const CHARCOAL  = "var(--color-heading)";
@@ -246,7 +248,7 @@ export function Navbar() {
                           )},
                         ].map(s => (
                           <div key={s.label} className="flex items-center gap-2 rounded-xl px-3 py-2" style={{ backgroundColor: "rgba(255,255,255,0.07)" }}>
-                            <span style={{ color: GOLD }}>{s.icon}</span>
+                            <span style={{ color: GOLD }}><EmojiIcon emoji={s.icon} /></span>
                             <div>
                               <p className="text-xs font-black text-white">{s.value}</p>
                               <p className="text-[10px]" style={{ color: "#B8A882" }}>{s.label}</p>
@@ -311,7 +313,7 @@ export function Navbar() {
                           className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0 transition-colors group-hover:bg-white dark:group-hover:bg-[#2A2520]"
                           style={{ backgroundColor: IVORY, color: MUTED }}
                         >
-                          {item.icon}
+                          <EmojiIcon emoji={item.icon} />
                         </div>
                         <div className="flex-1 min-w-0">
                           <p className="text-sm font-semibold" style={{ color: CHARCOAL }}>{item.label}</p>
@@ -436,7 +438,7 @@ export function Navbar() {
                       >
                         <div className="w-10 h-10 rounded-xl flex items-center justify-center text-xl shrink-0"
                           style={{ backgroundColor: IVORY }}>
-                          {c.icon}
+                          <EmojiIcon emoji={c.icon} />
                         </div>
                         <div className="min-w-0">
                           <p className="text-sm font-semibold truncate" style={{ color: CHARCOAL }}>{c.name}</p>
@@ -455,7 +457,7 @@ export function Navbar() {
                       onClick={() => { nav("product", p.slug); setSearchOpen(false); }}
                       className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-left transition-colors duration-150 hover:bg-surface-warm"
                     >
-                      <span className="text-2xl shrink-0">{p.emoji ?? "🛍️"}</span>
+                      <span className="text-2xl shrink-0"><EmojiIcon emoji={p.emoji ?? "🛍️"} /></span>
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-semibold truncate" style={{ color: CHARCOAL }}>{p.name}</p>
                         <p className="text-xs" style={{ color: MUTED }}>{p.category?.name}</p>
@@ -470,7 +472,7 @@ export function Navbar() {
                     className="mt-2 w-full py-2.5 text-sm font-semibold rounded-xl transition-colors hover:bg-surface-warm"
                     style={{ color: GOLD, borderTop: `1px solid ${BORDER}` }}
                   >
-                    See all results for &ldquo;{searchQuery}&rdquo; →
+                    See all results for &ldquo;{searchQuery}&rdquo; <EmojiIcon emoji="→" />
                   </button>
                 </div>
               ) : (
@@ -519,7 +521,7 @@ export function Navbar() {
                 Stay signed in
               </button>
               <button
-                onClick={() => { const wasSeller = user?.role === "SELLER"; setUser(null); setSignOutConfirm(false); nav(wasSeller ? "login" : "home"); }}
+                onClick={() => { const wasSeller = user?.role === "SELLER"; setUser(null); setSignOutConfirm(false); signOut({ redirect: false }); nav(wasSeller ? "login" : "home"); }}
                 className="py-3 rounded-xl text-sm font-bold text-white transition-all duration-150 hover:opacity-90 active:scale-[0.98]"
                 style={{ backgroundColor: "#EF4444" }}
               >

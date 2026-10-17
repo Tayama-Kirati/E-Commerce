@@ -23,6 +23,7 @@ import {
 } from "lucide-react";
 import { cn, formatPrice, timeAgo } from "@/app/lib/utils";
 
+import { EmojiIcon } from "@/app/components/ui/EmojiIcon";
 // ─── Tiny chart primitives ────────────────────────────────────────────────
 
 function Sparkline({
@@ -253,7 +254,7 @@ function KpiCard({
  iconBg,
  )}
  >
- {icon}
+ <EmojiIcon emoji={icon} />
  </div>
  <Sparkline data={sparkline} color={sparkColor} />
  </div>
@@ -707,7 +708,7 @@ export default function AdminDashboardPage() {
  )}
  </div>
  <p className="text-xs text-gray-400">
- {s.totalSales?.toLocaleString()} sales · ⭐{" "}
+ {s.totalSales?.toLocaleString()} sales · <EmojiIcon emoji="⭐" />{" "}
  {(s.averageRating ?? 0).toFixed(1)}
  </p>
  </div>
@@ -757,7 +758,7 @@ export default function AdminDashboardPage() {
  .map((p: any, i: number) => (
  <div key={p.name} className="flex items-center gap-3">
  <span className="text-lg">
- {["📱", "🎧", "💻", "🎮", "⌚"][i] ?? "🛍️"}
+ <EmojiIcon emoji={["📱", "🎧", "💻", "🎮", "⌚"][i] ?? "🛍️"} />
  </span>
  <div className="flex-1 min-w-0">
  <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
@@ -840,7 +841,7 @@ export default function AdminDashboardPage() {
  a.color,
  )}
  >
- <span className="text-2xl">{a.icon}</span>
+ <span className="text-2xl"><EmojiIcon emoji={a.icon} /></span>
  <span className="leading-tight">{a.label}</span>
  </Link>
  ))}
@@ -938,10 +939,10 @@ function PendingApprovalsCard() {
  onClick={() => approve(s.id)}
  className="px-2.5 py-1 bg-green-100 hover:bg-green-200 dark:bg-green-900/30 dark:hover:bg-green-900/50 text-green-700 text-xs font-bold rounded-lg transition-colors"
  >
- ✓
+ <EmojiIcon emoji="✓" />
  </button>
  <button className="px-2.5 py-1 bg-red-100 hover:bg-red-200 dark:bg-red-900/30 dark:hover:bg-red-900/50 text-red-700 text-xs font-bold rounded-lg transition-colors">
- ✕
+ <EmojiIcon emoji="✕" />
  </button>
  </div>
  )}

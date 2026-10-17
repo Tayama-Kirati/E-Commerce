@@ -32,6 +32,7 @@ import { useWishlistStore } from "@/app/store/wishlistStore";
 import { cn, formatPrice } from "@/app/lib/utils";
 import { toast } from "react-hot-toast";
 
+import { EmojiIcon, EmojiText } from "@/app/components/ui/EmojiIcon";
 export default function CartPage() {
  const router = useRouter();
  const { data: session } = useSession();
@@ -138,7 +139,7 @@ export default function CartPage() {
  /* Empty state */
  <div className="flex flex-col items-center justify-center py-24 text-center">
  <div className="w-24 h-24 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center mb-6 text-5xl">
- 🛒
+ <EmojiIcon emoji="🛒" />
  </div>
  <h2 className="text-2xl font-black text-gray-900 dark:text-white mb-2">
  Your cart is empty
@@ -207,7 +208,7 @@ export default function CartPage() {
  <div className="flex items-center gap-2 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-2xl px-5 py-3">
  <Truck className="w-4 h-4 text-green-600" />
  <p className="text-sm font-semibold text-green-700 dark:text-green-400">
- 🎉 You qualify for free delivery!
+ <EmojiIcon emoji="🎉" /> You qualify for free delivery!
  </p>
  </div>
  )}
@@ -367,9 +368,9 @@ export default function CartPage() {
  : "text-gray-900 dark:text-white",
  )}
  >
- {summary.freeShipping
+ <EmojiText>{summary.freeShipping
  ? "Free 🎉"
- : formatPrice(summary.shippingCost)}
+ : formatPrice(summary.shippingCost)}</EmojiText>
  </span>
  </div>
  {couponApplied && couponDiscount > 0 && (
@@ -443,7 +444,7 @@ export default function CartPage() {
  key={t.label}
  className="flex items-center gap-1 text-xs text-gray-400"
  >
- <span className="text-blue-400">{t.icon}</span>
+ <span className="text-blue-400"><EmojiIcon emoji={t.icon} /></span>
  {t.label}
  </div>
  ))}
@@ -455,7 +456,7 @@ export default function CartPage() {
  Accepted payments
  </p>
  <div className="flex gap-2 justify-center flex-wrap">
- {["eSewa", "Khalti", "Visa", "Mastercard", "COD"].map(
+ {["Khalti", "Visa", "Mastercard", "COD"].map(
  (m) => (
  <span
  key={m}
@@ -487,7 +488,7 @@ export default function CartPage() {
  className="shrink-0w-28 group"
  >
  <div className="w-28 h-28 bg-gray-100 dark:bg-gray-800 rounded-xl flex items-center justify-center text-3xl mb-2 group-hover:scale-105 transition-transform">
- {p.emoji}
+ <EmojiIcon emoji={p.emoji} />
  </div>
  <p className="text-xs font-semibold text-gray-800 dark:text-gray-200 line-clamp-2">
  {p.name}

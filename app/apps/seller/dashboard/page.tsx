@@ -62,6 +62,7 @@ import { cn, formatPrice, timeAgo } from "@/app/lib/utils";
 import { toast } from "react-hot-toast";
 import { useDebounce } from "@/app/hooks/useDebounce";
 
+import { EmojiIcon, EmojiText } from "@/app/components/ui/EmojiIcon";
 // ─── Types ────────────────────────────────────────────────────────────────
 
 type SellerTab =
@@ -200,26 +201,26 @@ export default function SellerDashboardPage() {
  )}
  {seller.isTopRated && (
  <span className="text-xs bg-amber-100 text-amber-700 font-bold px-2 py-0.5 rounded-full">
- ⭐ Top Rated
+ <EmojiIcon emoji="⭐" /> Top Rated
  </span>
  )}
  {seller.isFastShipper && (
  <span className="text-xs bg-green-100 text-green-700 font-bold px-2 py-0.5 rounded-full">
- ⚡ Fast Shipper
+ <EmojiIcon emoji="⚡" /> Fast Shipper
  </span>
  )}
  </div>
  <div className="flex items-center gap-4 text-sm text-gray-400 flex-wrap">
  <span>
- ⭐ {(seller.averageRating ?? 0).toFixed(1)} (
+ <EmojiIcon emoji="⭐" /> {(seller.averageRating ?? 0).toFixed(1)} (
  {(seller.totalReviews ?? 0).toLocaleString()} reviews)
  </span>
  <span>
- 📦 {(seller.totalSales ?? 0).toLocaleString()} sales
+ <EmojiIcon emoji="📦" /> {(seller.totalSales ?? 0).toLocaleString()} sales
  </span>
- <span>💬 {seller.responseRate ?? 100}% response</span>
+ <span><EmojiIcon emoji="💬" /> {seller.responseRate ?? 100}% response</span>
  <span>
- 📍 {seller.city}, {seller.district}
+ <EmojiIcon emoji="📍" /> {seller.city}, {seller.district}
  </span>
  </div>
  </div>
@@ -256,8 +257,8 @@ export default function SellerDashboardPage() {
  : "text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800",
  )}
  >
- {item.icon}
- <span className="flex-1">{item.label}</span>
+ <EmojiIcon emoji={item.icon} />
+ <span className="flex-1"><EmojiText>{item.label}</EmojiText></span>
  {item.badge && (
  <span className="w-5 h-5 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center">
  {item.badge}
@@ -356,12 +357,12 @@ function OverviewTab({
  k.color,
  )}
  >
- {k.icon}
+ <EmojiIcon emoji={k.icon} />
  </div>
  <p className="text-2xl font-black text-gray-900 dark:text-white">
  {k.value}
  </p>
- <p className="text-sm text-gray-400 mt-0.5">{k.label}</p>
+ <p className="text-sm text-gray-400 mt-0.5"><EmojiText>{k.label}</EmojiText></p>
  <div
  className={cn(
  "flex items-center gap-1 text-xs font-semibold mt-2",
@@ -419,8 +420,8 @@ function OverviewTab({
  a.color,
  )}
  >
- <span className="text-2xl">{a.icon}</span>
- {a.label}
+ <span className="text-2xl"><EmojiIcon emoji={a.icon} /></span>
+ <EmojiText>{a.label}</EmojiText>
  </button>
  ))}
  </div>
@@ -711,7 +712,7 @@ function ProductsTab() {
  >
  {s.value?.toLocaleString()}
  </p>
- <p className="text-xs text-gray-400 mt-0.5">{s.label}</p>
+ <p className="text-xs text-gray-400 mt-0.5"><EmojiText>{s.label}</EmojiText></p>
  </div>
  ))}
  </div>
@@ -755,8 +756,8 @@ function ProductsTab() {
  className="px-3 py-2 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl text-sm text-gray-700 dark:text-gray-300 outline-none"
  >
  <option value="newest">Newest First</option>
- <option value="price_asc">Price ↑</option>
- <option value="price_desc">Price ↓</option>
+ <option value="price_asc">Price <EmojiIcon emoji="↑" /></option>
+ <option value="price_desc">Price <EmojiIcon emoji="↓" /></option>
  <option value="sales_desc">Most Sold</option>
  <option value="stock_asc">Low Stock First</option>
  </select>
@@ -891,7 +892,7 @@ function ProductsTab() {
  className="object-cover"
  />
  ) : (
- <span className="text-2xl">🛍️</span>
+ <span className="text-2xl"><EmojiIcon emoji="🛍️" /></span>
  )}
  </div>
  <div className="min-w-0">
@@ -1363,7 +1364,7 @@ function ProductsTab() {
  />
  <div>
  <p className="text-xs font-semibold text-gray-800 dark:text-gray-200">
- {f.label}
+ <EmojiText>{f.label}</EmojiText>
  </p>
  <p className="text-xs text-gray-400">{f.desc}</p>
  </div>
@@ -1512,7 +1513,7 @@ function OrdersTab() {
  className="bg-white dark:bg-gray-900 rounded-xl border border-gray-100 dark:border-gray-800 p-4 text-center"
  >
  <p className={cn("text-xl font-black", s.color)}>{s.value}</p>
- <p className="text-xs text-gray-400 mt-0.5">{s.label}</p>
+ <p className="text-xs text-gray-400 mt-0.5"><EmojiText>{s.label}</EmojiText></p>
  </div>
  ))}
  </div>
@@ -1875,7 +1876,7 @@ function ReviewsTab() {
  : "text-gray-500 hover:text-gray-700",
  )}
  >
- {l}
+ <EmojiText>{l}</EmojiText>
  </button>
  ))}
  </div>
@@ -1897,7 +1898,7 @@ function ReviewsTab() {
  </p>
  {r.verified && (
  <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full font-semibold">
- ✓ Verified Purchase
+ <EmojiIcon emoji="✓" /> Verified Purchase
  </span>
  )}
  <span className="text-xs text-gray-400 ml-auto">
@@ -1914,7 +1915,7 @@ function ReviewsTab() {
  s <= r.rating ? "text-amber-400" : "text-gray-200",
  )}
  >
- ★
+ <EmojiIcon emoji="★" />
  </span>
  ))}
  </div>
@@ -2049,9 +2050,9 @@ function AnalyticsTab() {
  {s.value}
  </p>
  <p className="text-xs font-semibold text-gray-600 dark:text-gray-300 mt-0.5">
- {s.label}
+ <EmojiText>{s.label}</EmojiText>
  </p>
- <p className="text-xs text-gray-400">{s.sub}</p>
+ <p className="text-xs text-gray-400"><EmojiText>{s.sub}</EmojiText></p>
  </div>
  ))}
  </div>
@@ -2177,9 +2178,9 @@ function PayoutsTab({ seller }: { seller: any }) {
  "border-transparent",
  )}
  >
- <div className="text-3xl mb-2">{s.icon}</div>
+ <div className="text-3xl mb-2"><EmojiIcon emoji={s.icon} /></div>
  <p className={cn("text-2xl font-black", s.color)}>{s.value}</p>
- <p className="text-sm text-gray-500 mt-1">{s.label}</p>
+ <p className="text-sm text-gray-500 mt-1"><EmojiText>{s.label}</EmojiText></p>
  </div>
  ))}
  </div>
@@ -2510,7 +2511,7 @@ function EmptyState({
 }) {
  return (
  <div className="flex flex-col items-center justify-center py-16 px-4 text-center">
- <span className="text-5xl mb-4 block">{icon}</span>
+ <span className="text-5xl mb-4 block"><EmojiIcon emoji={icon} /></span>
  <h3 className="font-semibold text-gray-900 dark:text-white text-lg mb-2">
  {title}
  </h3>
@@ -2520,7 +2521,7 @@ function EmptyState({
  onClick={action.onClick}
  className="flex items-center gap-2 px-5 py-2.5 bg-blue-600 text-white font-semibold text-sm rounded-xl hover:bg-blue-700 transition-colors"
  >
- {action.label}
+ <EmojiText>{action.label}</EmojiText>
  </button>
  )}
  </div>
@@ -2552,7 +2553,7 @@ function DashCard({
  onClick={action.onClick}
  className="text-xs text-blue-600 font-semibold hover:underline flex items-center gap-1"
  >
- {action.label}
+ <EmojiText>{action.label}</EmojiText>
  <ChevronRight className="w-3 h-3" />
  </button>
  )}

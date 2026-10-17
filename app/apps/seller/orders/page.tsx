@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { Package, ChevronDown, ChevronUp, MapPin } from "lucide-react";
 
+import { EmojiText } from "@/app/components/ui/EmojiIcon";
 type Order = {
   id: string;
   orderNumber: string;
@@ -139,7 +140,7 @@ function OrderCard({ order, onUpdate }: { order: Order; onUpdate: (id: string, u
             className="w-full py-2.5 text-sm font-bold text-white rounded-xl transition-all disabled:opacity-60"
             style={{ backgroundColor: saved ? "#16a34a" : "#C68313" }}
           >
-            {saving ? "Saving…" : saved ? "✓ Saved" : "Update Order"}
+            <EmojiText>{saving ? "Saving…" : saved ? "✓ Saved" : "Update Order"}</EmojiText>
           </button>
         </div>
       )}

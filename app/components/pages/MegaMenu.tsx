@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/app/lib/utils";
 
+import { EmojiIcon, EmojiText } from "@/app/components/ui/EmojiIcon";
 const MEGA_CATEGORIES = [
   {
     id: "flash",
@@ -313,8 +314,8 @@ export function MegaMenu() {
                     : "hover:text-[#C68313] hover:bg-gray-50 dark:hover:bg-gray-800/50",
                 )}
               >
-                {cat.icon && <span className="opacity-70">{cat.icon}</span>}
-                {cat.label}
+                {cat.icon && <span className="opacity-70"><EmojiIcon emoji={cat.icon} /></span>}
+                <EmojiText>{cat.label}</EmojiText>
                 {cat.children?.length > 0 && (
                   <ChevronRight
                     className={cn(
@@ -340,7 +341,7 @@ export function MegaMenu() {
           <div className="max-w-7xl mx-auto px-4 py-6 grid grid-cols-[1fr_auto] gap-8">
             <div>
               <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">
-                {active.label}
+                <EmojiText>{active.label}</EmojiText>
               </h3>
               <div className="grid grid-cols-3 gap-1">
                 {active.children.map((child) => (
@@ -350,9 +351,9 @@ export function MegaMenu() {
                     onClick={() => setActiveId(null)}
                     className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl hover:bg-surface-warm dark:hover:bg-[rgba(198,131,19,0.1)] group transition-colors"
                   >
-                    <span className="text-lg">{child.icon}</span>
+                    <span className="text-lg"><EmojiIcon emoji={child.icon} /></span>
                     <span className="text-sm font-medium text-gray-700 dark:text-gray-300 group-hover:text-[#C68313]">
-                      {child.label}
+                      <EmojiText>{child.label}</EmojiText>
                     </span>
                     <ChevronRight className="w-3 h-3 text-gray-300 ml-auto opacity-0 group-hover:opacity-100 transition-opacity" />
                   </Link>
@@ -363,7 +364,7 @@ export function MegaMenu() {
                 onClick={() => setActiveId(null)}
                 className="inline-flex items-center gap-2 mt-4 text-sm font-semibold text-[#C68313] hover:text-[#9B6210]"
               >
-                View all in {active.label} <ChevronRight className="w-4 h-4" />
+                View all in <EmojiText>{active.label}</EmojiText> <ChevronRight className="w-4 h-4" />
               </Link>
             </div>
             {active.featured && (
@@ -377,13 +378,13 @@ export function MegaMenu() {
                   className="block bg-linear-to-br from-surface-warm to-border dark:from-[rgba(198,131,19,0.1)] dark:to-[rgba(198,131,19,0.2)] rounded-2xl p-4 hover:shadow-md transition-shadow border border-border dark:border-[rgba(198,131,19,0.3)]"
                 >
                   <div className="text-5xl mb-3 text-center">
-                    {active.featured.img}
+                    <EmojiIcon emoji={active.featured.img} />
                   </div>
                   <span className="inline-block text-xs bg-[#C68313] text-white font-bold px-2 py-0.5 rounded-full mb-2">
                     {active.featured.badge}
                   </span>
                   <p className="text-sm font-semibold text-gray-800 dark:text-gray-200">
-                    {active.featured.label}
+                    <EmojiText>{active.featured.label}</EmojiText>
                   </p>
                 </Link>
               </div>

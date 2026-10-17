@@ -5,6 +5,7 @@ import { cn } from "@/app/lib/utils";
 import { ProductCard } from "./ProductCard";
 import type { ProductCardData } from "@/app/types";
 
+import { EmojiIcon } from "@/app/components/ui/EmojiIcon";
 interface ProductGridProps {
  products: ProductCardData[];
  isLoading?: boolean;
@@ -36,7 +37,7 @@ export const ProductGrid: React.FC<ProductGridProps> = ({
  if (!isLoading && products.length === 0) {
  return (
  <div className="flex flex-col items-center justify-center py-20 text-center">
- <span className="text-6xl mb-4">🔍</span>
+ <span className="text-6xl mb-4"><EmojiIcon emoji="🔍" /></span>
  <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
  No products found
  </h3>

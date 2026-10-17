@@ -3,6 +3,7 @@ import { useState } from "react";
 import Image from "next/image";
 import { useCartStore, useUIStore, useAuthStore } from "@/app/lib/store";
 
+import { EmojiIcon, EmojiText } from "@/app/components/ui/EmojiIcon";
 const GOLD    = "#C68313";
 const BORDER  = "#E8E8E8";
 const MUTED   = "var(--color-muted)";
@@ -45,7 +46,7 @@ export function CartPage() {
 
   if (cartItems.length === 0) return (
     <div className="max-w-6xl mx-auto px-4 py-24 text-center">
-      <div className="text-7xl mb-5">🛒</div>
+      <div className="text-7xl mb-5"><EmojiIcon emoji="🛒" /></div>
       <h2 className="text-2xl font-black mb-2" style={{ color: CHARCOAL }}>Your cart is empty</h2>
       <p className="text-sm mb-8" style={{ color: MUTED }}>Add some amazing products to get started!</p>
       <button onClick={() => nav("products")} className="px-8 py-3.5 text-white font-black rounded-xl" style={{ backgroundColor: GOLD }}>
@@ -174,7 +175,7 @@ export function CartPage() {
                             className="object-cover"
                           />
                         ) : (
-                          <div className="w-full h-full flex items-center justify-center text-3xl">🛍️</div>
+                          <div className="w-full h-full flex items-center justify-center text-3xl"><EmojiIcon emoji="🛍️" /></div>
                         )}
                       </div>
 
@@ -276,7 +277,7 @@ export function CartPage() {
               <div className="flex justify-between">
                 <span style={{ color: MUTED }}>Shipping Fee</span>
                 <span className="font-semibold" style={{ color: selectedShip === 0 && selectedCount > 0 ? "#16A34A" : CHARCOAL }}>
-                  {selectedShip === 0 && selectedCount > 0 ? "Free 🎉" : `रू ${selectedShip.toLocaleString()}`}
+                  <EmojiText>{selectedShip === 0 && selectedCount > 0 ? "Free 🎉" : `रू ${selectedShip.toLocaleString()}`}</EmojiText>
                 </span>
               </div>
             </div>

@@ -15,10 +15,7 @@ export async function GET(req: NextRequest) {
       id: true,
       storeName: true,
       storeSlug: true,
-      storeDescription: true,
-      storeLogo: true,
       isVerified: true,
-      status: true,
     },
   });
 

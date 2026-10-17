@@ -17,8 +17,10 @@ export async function GET(req: NextRequest) {
     );
 
     const cacheKey = `search:${q}:${type}:${limit}`;
-    const cached = await redis.get(cacheKey);
-    if (cached) return NextResponse.json(JSON.parse(cached as string));
+    try {
+      const cached = await redis.get(cacheKey);
+      if (cached) return NextResponse.json(JSON.parse(cached as string));
+    } catch { /* cache miss, continue to DB */ }
 
     const results: any = {};
 
@@ -78,8 +80,8 @@ export async function GET(req: NextRequest) {
       });
     }
 
-    await redis.zincrby("search:trending", 1, q.toLowerCase());
-    await redis.setex(cacheKey, 60, JSON.stringify(results));
+    try { await redis.zincrby("search:trending", 1, q.toLowerCase()); } catch { /* non-fatal */ }
+    try { await redis.setex(cacheKey, 60, JSON.stringify(results)); } catch { /* non-fatal */ }
     return NextResponse.json(results);
   } catch (error) {
     if (error instanceof z.ZodError) {

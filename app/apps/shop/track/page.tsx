@@ -20,6 +20,7 @@ import {
 import { cn, formatPrice, timeAgo } from "@/app/lib/utils";
 import { toast } from "react-hot-toast";
 
+import { EmojiIcon } from "@/app/components/ui/EmojiIcon";
 export default function TrackPage() {
  const searchParams = useSearchParams();
  const { data: session } = useSession();
@@ -127,7 +128,7 @@ export default function TrackPage() {
 
  {error && (
  <div className="mt-4 bg-red-100 text-red-700 rounded-xl px-4 py-2.5 text-sm font-semibold max-w-lg mx-auto">
- ⚠️ {error}
+ <EmojiIcon emoji="⚠️" /> {error}
  </div>
  )}
  </div>
@@ -137,7 +138,7 @@ export default function TrackPage() {
  <div className="max-w-3xl mx-auto px-4 py-8">
  {!data && !loading && (
  <div className="text-center py-12">
- <div className="text-6xl mb-4">📦</div>
+ <div className="text-6xl mb-4"><EmojiIcon emoji="📦" /></div>
  <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">
  Where is my order?
  </h3>
@@ -236,7 +237,7 @@ export default function TrackPage() {
  rel="noopener noreferrer"
  className="text-xs text-blue-600 font-semibold hover:underline ml-3"
  >
- Track →
+ Track <EmojiIcon emoji="→" />
  </a>
  )}
  </div>
@@ -292,7 +293,7 @@ export default function TrackPage() {
  : "bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700 text-gray-300",
  )}
  >
- {step.done ? "✓" : step.icon}
+ {step.done ? <EmojiIcon emoji={"✓"} /> : <EmojiIcon emoji={step.icon} />}
  </div>
  <div className="flex-1 pt-0.5">
  <div className="flex items-center justify-between flex-wrap gap-2">

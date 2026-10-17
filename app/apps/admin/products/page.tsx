@@ -29,6 +29,7 @@ import { cn, formatPrice, timeAgo } from "@/app/lib/utils";
 import { useDebounce } from "@/app/hooks/useDebounce";
 import { toast } from "react-hot-toast";
 
+import { EmojiIcon, EmojiText } from "@/app/components/ui/EmojiIcon";
 const STATUS_COLORS: Record<string, string> = {
  ACTIVE: "bg-green-100 text-green-700 dark:bg-green-900/30",
  DRAFT: "bg-gray-100 text-gray-500 dark:bg-gray-800",
@@ -311,11 +312,11 @@ export default function AdminProductsPage() {
  className="px-3 py-2 bg-gray-50 dark:bg-gray-800 border-0 rounded-xl text-sm text-gray-700 dark:text-gray-300 outline-none"
  >
  <option value="all">All Status</option>
- <option value="PENDING_REVIEW">⏳ Pending Review</option>
- <option value="ACTIVE">✅ Active</option>
- <option value="DRAFT">📝 Draft</option>
- <option value="INACTIVE">🚫 Inactive</option>
- <option value="REJECTED">❌ Rejected</option>
+ <option value="PENDING_REVIEW"><EmojiIcon emoji="⏳" /> Pending Review</option>
+ <option value="ACTIVE">Active</option>
+ <option value="DRAFT">Draft</option>
+ <option value="INACTIVE">Inactive</option>
+ <option value="REJECTED">Rejected</option>
  </select>
  <select
  value={sort}
@@ -364,7 +365,7 @@ export default function AdminProductsPage() {
  : "bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:border-blue-400 hover:text-blue-600",
  )}
  >
- {tab.l}
+ <EmojiText>{tab.l}</EmojiText>
  <span
  className={cn(
  "px-1.5 py-0.5 rounded-full text-[10px] font-black",
@@ -501,7 +502,7 @@ export default function AdminProductsPage() {
  {p.totalReviews > 0 ? (
  <div>
  <span className="text-amber-500 font-bold">
- ⭐ {(p.averageRating ?? 0).toFixed(1)}
+ <EmojiIcon emoji="⭐" /> {(p.averageRating ?? 0).toFixed(1)}
  </span>
  <p className="text-xs text-gray-400">
  ({p.totalReviews})
@@ -521,7 +522,7 @@ export default function AdminProductsPage() {
  title="Flash Sale"
  className="text-amber-500"
  >
- ⚡
+ <EmojiIcon emoji="⚡" />
  </span>
  )}
  {p.isEco && (
@@ -529,12 +530,12 @@ export default function AdminProductsPage() {
  title="Eco-Friendly"
  className="text-green-500"
  >
- 🌿
+ <EmojiIcon emoji="🌿" />
  </span>
  )}
  {p.isFeatured && (
  <span title="Featured" className="text-blue-500">
- ⭐
+ <EmojiIcon emoji="⭐" />
  </span>
  )}
  {p.freeShipping && (
@@ -542,7 +543,7 @@ export default function AdminProductsPage() {
  title="Free Shipping"
  className="text-blue-500"
  >
- 🚚
+ <EmojiIcon emoji="🚚" />
  </span>
  )}
  {!p.isFlashSale &&
@@ -753,7 +754,7 @@ export default function AdminProductsPage() {
  }}
  className="flex-1 py-2.5 bg-green-600 text-white text-sm font-semibold rounded-xl hover:bg-green-700 transition-colors"
  >
- ✓ Approve
+ <EmojiIcon emoji="✓" /> Approve
  </button>
  <button
  onClick={() => {
@@ -762,7 +763,7 @@ export default function AdminProductsPage() {
  }}
  className="flex-1 py-2.5 bg-red-600 text-white text-sm font-semibold rounded-xl hover:bg-red-700 transition-colors"
  >
- ✕ Reject
+ <EmojiIcon emoji="✕" /> Reject
  </button>
  </div>
  )}
@@ -989,7 +990,7 @@ export function AdminInventoryPage() {
  key={s.label}
  className={cn("rounded-2xl border p-5 text-center", s.bg, s.border)}
  >
- <div className="text-3xl mb-2">{s.icon}</div>
+ <div className="text-3xl mb-2"><EmojiIcon emoji={s.icon} /></div>
  <p className={cn("text-3xl font-black", s.color)}>{s.value}</p>
  <p className="text-sm text-gray-500 mt-1">{s.label}</p>
  </div>
@@ -1024,7 +1025,7 @@ export function AdminInventoryPage() {
  : "text-gray-500 hover:text-gray-700 dark:hover:text-gray-300",
  )}
  >
- {t.l}
+ <EmojiText>{t.l}</EmojiText>
  {t.count > 0 && (
  <span className="ml-1 opacity-60">({t.count})</span>
  )}
@@ -1364,7 +1365,7 @@ export function AdminReturnsPage() {
  : "text-gray-500 hover:text-gray-700 dark:hover:text-gray-300",
  )}
  >
- {t.l}
+ <EmojiText>{t.l}</EmojiText>
  </button>
  ))}
  </div>
@@ -1445,7 +1446,7 @@ export function AdminReturnsPage() {
  {processing ? (
  <div className="w-3.5 h-3.5 border border-white/40 border-t-white rounded-full animate-spin" />
  ) : null}
- 💸 Process Refund
+ <EmojiIcon emoji="💸" /> Process Refund
  </button>
  </div>
  )}

@@ -27,6 +27,7 @@ import { cn, formatPrice } from "@/app/lib/utils";
 import { useCartStore } from "@/app/store/cartStore";
 import { toast } from "react-hot-toast";
 
+import { EmojiIcon, EmojiText } from "@/app/components/ui/EmojiIcon";
 type Step = "address" | "payment" | "review" | "confirmed";
 
 const STEPS: { id: Step; label: string; icon: React.ReactNode }[] = [
@@ -52,7 +53,6 @@ type AddressForm = z.input<typeof AddressSchema>;
 
 type PaymentMethod =
  | "KHALTI"
- | "ESEWA"
  | "STRIPE"
  | "CASH_ON_DELIVERY"
  | "WALLET";
@@ -212,12 +212,7 @@ export default function CheckoutPage() {
 
  // For digital payments, redirect to gateway
  if (paymentMethod !== "CASH_ON_DELIVERY" && data.requiresPayment) {
- const gateway =
- paymentMethod === "KHALTI"
- ? "khalti"
- : paymentMethod === "ESEWA"
- ? "esewa"
- : "stripe";
+ const gateway = paymentMethod === "KHALTI" ? "khalti" : "stripe";
  const payRes = await fetch(`/api/payments/${gateway}/initiate`, {
  method: "POST",
  headers: { "Content-Type": "application/json" },
@@ -245,7 +240,7 @@ export default function CheckoutPage() {
  if (items.length === 0 && step !== "confirmed") {
  return (
  <div className="max-w-lg mx-auto px-4 py-20 text-center">
- <div className="text-6xl mb-4">🛒</div>
+ <div className="text-6xl mb-4"><EmojiIcon emoji="🛒" /></div>
  <h2 className="text-xl font-bold mb-2">Your cart is empty</h2>
  <Link
  href="/"
@@ -363,7 +358,7 @@ export default function CheckoutPage() {
  {addr.province}, {addr.country}
  </p>
  <p className="text-sm text-gray-500 mt-0.5">
- 📞 {addr.phone}
+ <EmojiIcon emoji="📞" /> {addr.phone}
  </p>
  </div>
  </label>
@@ -398,11 +393,11 @@ export default function CheckoutPage() {
  {...register("label")}
  className="sr-only"
  />
- {label === "Home"
+ <EmojiText>{label === "Home"
  ? "🏠"
  : label === "Work"
  ? "🏢"
- : "📍"}{" "}
+ : "📍"}</EmojiText>{" "}
  {label}
  </label>
  ))}
@@ -580,14 +575,6 @@ export default function CheckoutPage() {
  "border-blue-500 bg-blue-50 dark:bg-blue-900/20",
  },
  {
- id: "ESEWA" as PaymentMethod,
- name: "eSewa",
- desc: "Pay with Nepal's most popular digital wallet",
- logo: "🟢",
- badge: null,
- color: "border-green-500 bg-green-50 dark:bg-green-900/20",
- },
- {
  id: "STRIPE" as PaymentMethod,
  name: "Card (Visa / Mastercard)",
  desc: "Debit or credit card — secured by Stripe",
@@ -622,7 +609,7 @@ export default function CheckoutPage() {
  className="sr-only"
  />
  <div className="w-10 h-10 bg-white dark:bg-gray-800 rounded-xl flex items-center justify-center text-2xl shadow-sm shrink-0">
- {method.logo}
+ <EmojiText>{method.logo}</EmojiText>
  </div>
  <div className="flex-1">
  <div className="flex items-center gap-2">
@@ -693,7 +680,7 @@ export default function CheckoutPage() {
  </div>
  {couponApplied && (
  <p className="text-xs text-green-600 font-semibold mt-2">
- ✅ Saved {formatPrice(couponDiscount)}!
+ <EmojiIcon emoji="✅" /> Saved {formatPrice(couponDiscount)}!
  </p>
  )}
  </div>
@@ -784,7 +771,7 @@ export default function CheckoutPage() {
  {selectedAddr?.district}
  </p>
  <p className="text-sm text-gray-500">
- 📞 {selectedAddr?.phone}
+ <EmojiIcon emoji="📞" /> {selectedAddr?.phone}
  </p>
  </div>
  <button
@@ -804,13 +791,11 @@ export default function CheckoutPage() {
  Payment
  </p>
  <p className="text-sm font-semibold text-gray-900 dark:text-white">
- {paymentMethod === "KHALTI"
+ <EmojiText>{paymentMethod === "KHALTI"
  ? "🟣 Khalti"
- : paymentMethod === "ESEWA"
- ? "🟢 eSewa"
  : paymentMethod === "STRIPE"
  ? "💳 Card"
- : "💵 Cash on Delivery"}
+ : "💵 Cash on Delivery"}</EmojiText>
  </p>
  </div>
  <button
@@ -929,7 +914,7 @@ export default function CheckoutPage() {
  <CheckCircle className="w-10 h-10 text-green-600" />
  </div>
  <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
- Order Confirmed! 🎉
+ Order Confirmed! <EmojiIcon emoji="🎉" />
  </h2>
  <p className="text-gray-500 mb-2">
  Your order has been placed successfully.
@@ -1045,7 +1030,7 @@ export default function CheckoutPage() {
  key={t.text}
  className="flex items-center gap-2 text-xs text-gray-400"
  >
- <span>{t.icon}</span>
+ <span><EmojiIcon emoji={t.icon} /></span>
  {t.text}
  </div>
  ))}

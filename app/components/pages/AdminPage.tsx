@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import Image from "next/image";
 import { cn, formatPrice, useUIStore, useAuthStore } from "@/app/lib/store";
 
+import { EmojiIcon, EmojiText } from "@/app/components/ui/EmojiIcon";
 const GOLD     = "#C68313";
 const CHARCOAL = "var(--color-heading)";
 const BORDER   = "#E8D5A8";
@@ -72,10 +73,10 @@ function StatCard({ icon, label, value, sub, color = GOLD }: any) {
   return (
     <div className="bg-white dark:bg-[#1A1814] rounded-2xl p-5" style={{ border:`1px solid ${BORDER}` }}>
       <div className="flex items-center justify-between mb-3">
-        <span className="text-2xl">{icon}</span>
+        <span className="text-2xl"><EmojiIcon emoji={icon} /></span>
         {sub && <span className="text-[10px] font-bold px-2 py-0.5 rounded-full" style={{ backgroundColor:IVORY, color:MUTED }}>{sub}</span>}
       </div>
-      <p className="text-2xl font-black mb-0.5" style={{ color }}>{value}</p>
+      <p className="text-2xl font-black mb-0.5" style={{ color }}><EmojiText>{value}</EmojiText></p>
       <p className="text-xs" style={{ color:MUTED }}>{label}</p>
     </div>
   );
@@ -112,7 +113,7 @@ function ProductModal({ initial, onSave, onClose }: {
       <div className="bg-white dark:bg-[#1A1814] rounded-3xl w-full max-w-md shadow-2xl" style={{ border:`1px solid ${BORDER}` }}>
         <div className="flex items-center justify-between px-6 py-4" style={{ borderBottom:`1px solid ${BORDER}` }}>
           <h3 className="font-black text-sm" style={{ color:CHARCOAL }}>{initial ? "Edit Product" : "Add New Product"}</h3>
-          <button onClick={onClose} className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-gray-100 text-sm" style={{ color:MUTED }}>✕</button>
+          <button onClick={onClose} className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-gray-100 text-sm" style={{ color:MUTED }}><EmojiIcon emoji="✕" /></button>
         </div>
         <div className="p-6 space-y-4">
           {([
@@ -168,7 +169,7 @@ function CouponModal({ onSave, onClose }: { onSave:(c:Coupon) => void; onClose:(
       <div className="bg-white dark:bg-[#1A1814] rounded-3xl w-full max-w-md shadow-2xl" style={{ border:`1px solid ${BORDER}` }}>
         <div className="flex items-center justify-between px-6 py-4" style={{ borderBottom:`1px solid ${BORDER}` }}>
           <h3 className="font-black text-sm" style={{ color:CHARCOAL }}>Create Coupon</h3>
-          <button onClick={onClose} className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-gray-100 text-sm" style={{ color:MUTED }}>✕</button>
+          <button onClick={onClose} className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-gray-100 text-sm" style={{ color:MUTED }}><EmojiIcon emoji="✕" /></button>
         </div>
         <div className="p-6 space-y-4">
           {([
@@ -250,7 +251,7 @@ export function AdminPage() {
   if (!user || !["ADMIN","SUPER_ADMIN"].includes(user.role)) {
     return (
       <div className="max-w-lg mx-auto px-4 py-24 text-center">
-        <div className="text-6xl mb-5">🔒</div>
+        <div className="text-6xl mb-5"><EmojiIcon emoji="🔒" /></div>
         <h2 className="text-2xl font-black mb-2" style={{ color:CHARCOAL }}>Admin Access Required</h2>
         <p className="text-sm mb-6" style={{ color:MUTED }}>You need admin privileges to access this panel.</p>
         <button onClick={() => nav("home")} className="px-6 py-3 text-sm font-bold text-white rounded-xl" style={{ backgroundColor:GOLD }}>Go Home</button>
@@ -299,7 +300,7 @@ export function AdminPage() {
             <p className="text-xs" style={{ color:MUTED }}>PeaNut Marketplace · {user.name}</p>
           </div>
           <button onClick={() => nav("home")} className="px-3 py-2 text-xs font-bold rounded-xl"
-            style={{ border:`1px solid ${BORDER}`, color:MUTED }}>🌐 View Site</button>
+            style={{ border:`1px solid ${BORDER}`, color:MUTED }}><EmojiIcon emoji="🌐" /> View Site</button>
         </div>
       </div>
 
@@ -313,7 +314,7 @@ export function AdminPage() {
                 <button key={t.id} onClick={() => setTab(t.id)}
                   className="flex items-center gap-3 w-full px-4 py-3 rounded-xl text-xs font-semibold transition-all mb-0.5 text-left"
                   style={tab === t.id ? { backgroundColor:IVORY, color:GOLD } : { color:MUTED }}>
-                  <span className="text-base">{t.icon}</span>{t.label}
+                  <span className="text-base"><EmojiIcon emoji={t.icon} /></span>{t.label}
                 </button>
               ))}
             </div>
@@ -389,7 +390,7 @@ export function AdminPage() {
                       style={{ border:`1px solid ${BORDER}`, color:CHARCOAL }}
                       onMouseEnter={e => { e.currentTarget.style.borderColor=GOLD; e.currentTarget.style.color=GOLD; e.currentTarget.style.transform="translateY(-2px)"; }}
                       onMouseLeave={e => { e.currentTarget.style.borderColor=BORDER; e.currentTarget.style.color=CHARCOAL; e.currentTarget.style.transform="none"; }}>
-                      <span className="text-2xl">{t.icon}</span>{t.label}
+                      <span className="text-2xl"><EmojiIcon emoji={t.icon} /></span>{t.label}
                     </button>
                   ))}
                 </div>
@@ -451,7 +452,7 @@ export function AdminPage() {
                         <div className="w-8 h-8 rounded-lg overflow-hidden shrink-0 flex items-center justify-center" style={{ backgroundColor:IVORY }}>
                           {p.images?.[0]?.url
                             ? <Image src={p.images[0].url} alt={p.name} width={32} height={32} className="object-cover w-full h-full" />
-                            : <span className="text-base">🛍️</span>}
+                            : <span className="text-base"><EmojiIcon emoji="🛍️" /></span>}
                         </div>
                         <div className="flex-1 min-w-0">
                           <p className="text-xs font-bold truncate" style={{ color:CHARCOAL }}>{p.name}</p>
@@ -489,7 +490,7 @@ export function AdminPage() {
                       <select value={u.role} onChange={e => changeRole(u.id,e.target.value)}
                         className={cn("text-[10px] font-bold px-2 py-1 rounded-full outline-none cursor-pointer", ROLE_COLORS[u.role]??"bg-gray-100 text-gray-600")}
                         style={{ border:"none" }}>
-                        {["CUSTOMER","SELLER","ADMIN"].map(r => <option key={r} value={r}>{r}</option>)}
+                        {["CUSTOMER","SELLER","ADMIN"].map(r => <option key={r} value={r}><EmojiText>{r}</EmojiText></option>)}
                       </select>
                       <p className="text-xs font-bold" style={{ color:CHARCOAL }}>{u.orders}</p>
                       <Pill label={u.status} color={u.status==="active"?"bg-green-100 text-green-700":"bg-red-100 text-red-700"} />
@@ -512,7 +513,7 @@ export function AdminPage() {
                     <div key={s.id} className="bg-white rounded-2xl p-5" style={{ border:`1px solid ${BORDER}` }}>
                       <div className="flex items-start justify-between">
                         <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-xl flex items-center justify-center text-xl" style={{ backgroundColor:IVORY }}>🏪</div>
+                          <div className="w-10 h-10 rounded-xl flex items-center justify-center text-xl" style={{ backgroundColor:IVORY }}><EmojiIcon emoji="🏪" /></div>
                           <div>
                             <div className="flex items-center gap-2">
                               <p className="text-sm font-black" style={{ color:CHARCOAL }}>{s.storeName}</p>
@@ -527,10 +528,10 @@ export function AdminPage() {
                         </div>
                       </div>
                       <div className="flex gap-2 mt-3 pt-3" style={{ borderTop:`1px solid ${BORDER}` }}>
-                        {s.status==="pending" && <button onClick={() => approveSeller(s.id,"approved")} className="px-4 py-1.5 text-xs font-bold rounded-xl bg-green-100 text-green-700 hover:bg-green-200">✓ Approve</button>}
+                        {s.status==="pending" && <button onClick={() => approveSeller(s.id,"approved")} className="px-4 py-1.5 text-xs font-bold rounded-xl bg-green-100 text-green-700 hover:bg-green-200"><EmojiIcon emoji="✓" /> Approve</button>}
                         {s.status==="suspended"
-                          ? <button onClick={() => approveSeller(s.id,"approved")} className="px-4 py-1.5 text-xs font-bold rounded-xl" style={{ backgroundColor:"#DCFCE7",color:"#16A34A" }}>↺ Restore</button>
-                          : <button onClick={() => approveSeller(s.id,"suspended")} className="px-4 py-1.5 text-xs font-bold rounded-xl" style={{ backgroundColor:"#FEF2F2",color:"#EF4444" }}>⊘ Suspend</button>}
+                          ? <button onClick={() => approveSeller(s.id,"approved")} className="px-4 py-1.5 text-xs font-bold rounded-xl" style={{ backgroundColor:"#DCFCE7",color:"#16A34A" }}><EmojiIcon emoji="↺" /> Restore</button>
+                          : <button onClick={() => approveSeller(s.id,"suspended")} className="px-4 py-1.5 text-xs font-bold rounded-xl" style={{ backgroundColor:"#FEF2F2",color:"#EF4444" }}><EmojiIcon emoji="⊘" /> Suspend</button>}
                       </div>
                     </div>
                   ))}
@@ -559,7 +560,7 @@ export function AdminPage() {
                 <div className="space-y-2">
                   {filteredProducts.map(p => (
                     <div key={p.id} className="bg-white rounded-2xl p-4 flex items-center gap-4" style={{ border:`1px solid ${BORDER}` }}>
-                      <div className="w-10 h-10 rounded-xl flex items-center justify-center text-2xl shrink-0" style={{ backgroundColor:IVORY }}>{p.emoji}</div>
+                      <div className="w-10 h-10 rounded-xl flex items-center justify-center text-2xl shrink-0" style={{ backgroundColor:IVORY }}><EmojiIcon emoji={p.emoji} /></div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-0.5">
                           <p className="text-sm font-bold truncate" style={{ color:CHARCOAL }}>{p.name}</p>
@@ -646,7 +647,7 @@ export function AdminPage() {
                       <div key={p.id} className="grid grid-cols-[2fr_1fr_1fr_1fr_auto] gap-4 items-center px-5 py-3"
                         style={{ borderTop:i>0?`1px solid ${BORDER}`:"none" }}>
                         <div className="flex items-center gap-2 min-w-0">
-                          <span className="text-lg shrink-0">{p.emoji}</span>
+                          <span className="text-lg shrink-0"><EmojiIcon emoji={p.emoji} /></span>
                           <p className="text-xs font-bold truncate" style={{ color:CHARCOAL }}>{p.name}</p>
                         </div>
                         <p className="text-xs" style={{ color:MUTED }}>{p.category}</p>
@@ -718,7 +719,7 @@ export function AdminPage() {
                   {categories.map(c => (
                     <div key={c.id} className="bg-white rounded-2xl p-5 flex items-center justify-between" style={{ border:`1px solid ${BORDER}` }}>
                       <div className="flex items-center gap-3">
-                        <span className="text-3xl">{c.icon}</span>
+                        <span className="text-3xl"><EmojiIcon emoji={c.icon} /></span>
                         <div>
                           <p className="text-sm font-bold" style={{ color:CHARCOAL }}>{c.name}</p>
                           <p className="text-[11px]" style={{ color:MUTED }}>/{c.slug}</p>
@@ -756,7 +757,7 @@ export function AdminPage() {
                     <div key={r.title} className="bg-white rounded-2xl p-5" style={{ border:`1px solid ${BORDER}` }}>
                       <div className="flex items-start justify-between">
                         <div className="flex items-center gap-3">
-                          <span className="text-2xl">{r.icon}</span>
+                          <span className="text-2xl"><EmojiIcon emoji={r.icon} /></span>
                           <div>
                             <p className="text-sm font-bold" style={{ color:CHARCOAL }}>{r.title}</p>
                             <p className="text-[11px]" style={{ color:MUTED }}>{r.period}</p>

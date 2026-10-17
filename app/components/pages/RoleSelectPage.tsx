@@ -1,6 +1,7 @@
 "use client";
 import { useUIStore } from "@/app/lib/store";
 
+import { EmojiIcon } from "@/app/components/ui/EmojiIcon";
 export function RoleSelectPage() {
  const { nav } = useUIStore();
 
@@ -20,7 +21,7 @@ export function RoleSelectPage() {
  <div className="bg-white dark:bg-gray-900 rounded-3xl border-2 border-gray-100 dark:border-gray-800 shadow-lg hover:border-[#C68313] hover:shadow-amber-100 dark:hover:border-[#C68313] dark:hover:shadow-none transition-all duration-200 p-8 flex flex-col items-center text-center group cursor-pointer"
  onClick={() => nav("login", { role: "CUSTOMER" } as any)}>
  <div className="w-20 h-20 bg-gradient-to-br from-blue-100 to-blue-200 dark:from-blue-900/40 dark:to-blue-800/40 rounded-3xl flex items-center justify-center text-4xl mb-5 group-hover:scale-105 transition-transform">
- 🛍️
+ <EmojiIcon emoji="🛍️" />
  </div>
  <h2 className="text-xl font-black text-gray-900 dark:text-white mb-2">I'm a Customer</h2>
  <p className="text-gray-400 text-sm mb-6 leading-relaxed">Shop millions of products with AI-powered recommendations and exclusive deals</p>
@@ -42,7 +43,7 @@ export function RoleSelectPage() {
  <div className="bg-white dark:bg-gray-900 rounded-3xl border-2 border-gray-100 dark:border-gray-800 shadow-lg hover:border-orange-400 hover:shadow-orange-100 dark:hover:border-orange-500 dark:hover:shadow-none transition-all duration-200 p-8 flex flex-col items-center text-center group cursor-pointer"
  onClick={() => nav("login", { role: "SELLER" } as any)}>
  <div className="w-20 h-20 bg-gradient-to-br from-orange-100 to-orange-200 dark:from-orange-900/40 dark:to-orange-800/40 rounded-3xl flex items-center justify-center text-4xl mb-5 group-hover:scale-105 transition-transform">
- 🏪
+ <EmojiIcon emoji="🏪" />
  </div>
  <h2 className="text-xl font-black text-gray-900 dark:text-white mb-2">I'm a Seller</h2>
  <p className="text-gray-400 text-sm mb-6 leading-relaxed">Reach millions of customers, manage your store, and grow your business</p>
@@ -59,7 +60,7 @@ export function RoleSelectPage() {
  </button>
  </div>
  <div className="mt-4 flex items-center gap-2 text-xs text-gray-400">
- <span>🏆</span><span>Join 85,000+ sellers on Pea<span style={{ color: "#C68313" }}>Nut</span></span>
+ <span><EmojiIcon emoji="🏆" /></span><span>Join 85,000+ sellers on Pea<span style={{ color: "#C68313" }}>Nut</span></span>
  </div>
  </div>
  </div>

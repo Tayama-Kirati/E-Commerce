@@ -1,37 +1,54 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# PeaNut — Nepal's marketplace
 
-## Getting Started
+Next.js 16 (App Router) + Prisma/PostgreSQL + NextAuth. Customers shop and pay with Khalti, card (Stripe) or Cash on Delivery; sellers manage stores, orders and payouts; admins moderate everything.
 
-First, run the development server:
+## Setup
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm install
+cp .env.example .env        # fill in the values — see the comments in the file
+npx prisma db push          # create/update the database tables
+npm run db:seed             # optional: sample categories and products
+npm run dev                 # http://localhost:3000
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+The minimum to boot is `DATABASE_URL`, `NEXTAUTH_URL` and `NEXTAUTH_SECRET`. Every other integration is optional and switches itself off when its keys are missing (emails and SMS are logged instead of sent, the Card option reports that it's unavailable, images are stored in `public/uploads`).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### Payments
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+- **Khalti** — set `KHALTI_SECRET_KEY` (sandbox by default; set `KHALTI_BASE_URL=https://khalti.com/api/v2` in production).
+- **Stripe** — set `STRIPE_SECRET_KEY` and `STRIPE_WEBHOOK_SECRET`. Locally: `stripe listen --forward-to localhost:3000/api/payments/stripe/webhook`.
+- **Abandoned payments** — `GET /api/payments/reconcile` (with `Authorization: Bearer $CRON_SECRET`) confirms payments whose customer closed the tab and cancels unpaid online orders after an hour, returning their stock. `vercel.json` runs it every 10 minutes on Vercel (Pro plan; Hobby allows daily crons only). Elsewhere, call it from any scheduler:
+  `curl -H "Authorization: Bearer $CRON_SECRET" https://YOUR_DOMAIN/api/payments/reconcile`
 
-## Learn More
+### First admin
 
-To learn more about Next.js, take a look at the following resources:
+Register normally, then promote the account:
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```bash
+npx prisma studio   # User table → set role to SUPER_ADMIN
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Project layout
 
-## Deploy on Vercel
+| Path | What's there |
+|---|---|
+| `app/page.tsx`, `app/components/pages/` | The storefront single-page app (`/?page=…&id=…`) |
+| `app/apps/{shop,account,seller,admin,auth}/` | Routed pages, served at clean URLs (`/products/:slug`, `/account/orders`, `/admin`, …) via `next.config.js` rewrites |
+| `app/apps/api/` | API routes, served at `/api/*` |
+| `app/lib/` | Business logic: pricing, coupons, shipping, order lifecycle, payments, notifications |
+| `proxy.ts` | Server-side route protection by role (Next 16's replacement for `middleware.ts`) |
+| `prisma/schema.prisma` | Database schema |
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Scripts
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
-# E-Commerce
+```bash
+npm run dev        # development server
+npm run build      # production build
+npm test           # unit tests (Vitest)
+npm run lint
+```
+
+## Admin settings
+
+Commission, payout limits, free-shipping threshold, return window, feature toggles (maintenance mode, seller auto-approval, loyalty, referrals, flash sales), shipping zones and homepage banners are all managed at `/admin/settings`.

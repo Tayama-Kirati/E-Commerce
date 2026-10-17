@@ -2,6 +2,7 @@
 import { useState, useEffect } from "react";
 import { useUIStore } from "@/app/lib/store";
 
+import { EmojiIcon, EmojiText } from "@/app/components/ui/EmojiIcon";
 const GOLD   = "#C68313";
 const BORDER = "#E8D5A8";
 const IVORY  = "var(--color-surface-warm)";
@@ -27,7 +28,7 @@ const FAQS = [
   },
   {
     q: "What payment methods are accepted?",
-    a: "We accept eSewa, Khalti, Visa, Mastercard, and Cash on Delivery (COD). All online payments are secured with 256-bit SSL encryption.",
+    a: "We accept Khalti, Visa, Mastercard, and Cash on Delivery (COD). All online payments are secured with 256-bit SSL encryption.",
   },
   {
     q: "Is my personal information safe?",
@@ -57,7 +58,7 @@ function HelpCenter() {
           { icon: "🔒", title: "Account & Security", desc: "Password reset, 2FA, account settings" },
         ].map(card => (
           <div key={card.title} className="rounded-2xl p-5 text-center" style={{ border: `1px solid ${BORDER}`, backgroundColor: IVORY }}>
-            <div className="text-4xl mb-3">{card.icon}</div>
+            <div className="text-4xl mb-3"><EmojiIcon emoji={card.icon} /></div>
             <p className="font-bold text-sm mb-1" style={{ color: "var(--color-heading)" }}>{card.title}</p>
             <p className="text-xs" style={{ color: MUTED }}>{card.desc}</p>
           </div>
@@ -107,7 +108,7 @@ function HowToBuy() {
         {STEPS.map((s) => (
           <div key={s.step} className="flex gap-5 rounded-2xl p-5" style={{ border: `1px solid ${BORDER}`, backgroundColor: IVORY }}>
             <div className="w-12 h-12 rounded-2xl flex items-center justify-center text-xl shrink-0" style={{ backgroundColor: GOLD + "20", border: `2px solid ${GOLD}` }}>
-              {s.icon}
+              <EmojiIcon emoji={s.icon} />
             </div>
             <div>
               <div className="flex items-center gap-2 mb-1">
@@ -128,9 +129,9 @@ function HowToBuy() {
             "✅ Look for the verified seller badge for trusted stores",
             "✅ Orders above रू 1,000 qualify for free shipping",
             "✅ Flash Sale prices are only valid during the sale window",
-            "✅ Use eSewa or Khalti for instant payment confirmation",
+            "✅ Use Khalti or a card for instant payment confirmation",
           ].map(tip => (
-            <li key={tip} className="text-sm" style={{ color: "#B8A882" }}>{tip}</li>
+            <li key={tip} className="text-sm" style={{ color: "#B8A882" }}><EmojiText>{tip}</EmojiText></li>
           ))}
         </ul>
       </div>
@@ -152,7 +153,7 @@ function ReturnsRefunds() {
           { icon: "🆓", title: "Free Returns", desc: "Free pickup for defective or wrong items" },
         ].map(c => (
           <div key={c.title} className="rounded-2xl p-5 text-center" style={{ border: `1px solid ${BORDER}`, backgroundColor: IVORY }}>
-            <div className="text-3xl mb-2">{c.icon}</div>
+            <div className="text-3xl mb-2"><EmojiIcon emoji={c.icon} /></div>
             <p className="font-bold text-sm mb-1" style={{ color: "var(--color-heading)" }}>{c.title}</p>
             <p className="text-xs" style={{ color: MUTED }}>{c.desc}</p>
           </div>
@@ -205,7 +206,7 @@ function ReturnsRefunds() {
       </div>
 
       <div className="mt-6 rounded-2xl p-4" style={{ backgroundColor: "#FEF9EE", border: `1px solid ${BORDER}` }}>
-        <p className="text-sm font-semibold" style={{ color: GOLD }}>⚠️ Note</p>
+        <p className="text-sm font-semibold" style={{ color: GOLD }}><EmojiIcon emoji="⚠️" /> Note</p>
         <p className="text-sm mt-1" style={{ color: MUTED }}>
           Items must be in their original condition. Returns are not accepted for perishable goods,
           intimate apparel, or items marked "non-returnable" on the product page.
@@ -278,7 +279,7 @@ const SELLER_FAQS = [
   },
   {
     q: "How do I receive my payment?",
-    a: "Payments from buyers are held securely and transferred to your registered bank account or Khalti/eSewa wallet after the order is marked Delivered and the return window has passed (7 days). Payouts are processed every Monday.",
+    a: "Payments from buyers are held securely and transferred to your registered bank account or Khalti wallet after the order is marked Delivered and the return window has passed (7 days). Payouts are processed every Monday.",
   },
   {
     q: "Can I sell from anywhere in Nepal?",
@@ -321,7 +322,7 @@ function HowToSell() {
           className="px-6 py-3 rounded-xl font-bold text-sm text-white shrink-0 transition-opacity hover:opacity-90"
           style={{ backgroundColor: GOLD }}
         >
-          Open Seller Account →
+          Open Seller Account <EmojiIcon emoji="→" />
         </button>
       </div>
 
@@ -332,7 +333,7 @@ function HowToSell() {
           <div key={s.step} className="flex gap-5 rounded-2xl p-5" style={{ border: `1px solid ${BORDER}`, backgroundColor: IVORY }}>
             <div className="w-12 h-12 rounded-2xl flex items-center justify-center text-xl shrink-0"
               style={{ backgroundColor: GOLD + "20", border: `2px solid ${GOLD}` }}>
-              {s.icon}
+              <EmojiIcon emoji={s.icon} />
             </div>
             <div>
               <div className="flex items-center gap-2 mb-1">
@@ -381,7 +382,7 @@ function HowToSell() {
       <div className="rounded-2xl p-6 mb-10" style={{ background: "linear-gradient(135deg, #1C1A16, #2D2418)" }}>
         <ul className="space-y-2">
           {SELLER_TIPS.map(tip => (
-            <li key={tip} className="text-sm" style={{ color: "#B8A882" }}>{tip}</li>
+            <li key={tip} className="text-sm" style={{ color: "#B8A882" }}><EmojiText>{tip}</EmojiText></li>
           ))}
         </ul>
       </div>
@@ -413,10 +414,31 @@ function HowToSell() {
 function ContactUs() {
   const [form, setForm] = useState({ name: "", email: "", subject: "", message: "" });
   const [sent, setSent] = useState(false);
+  const [sending, setSending] = useState(false);
+  const [error, setError] = useState("");
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setSent(true);
+    setSending(true);
+    setError("");
+    try {
+      // Opens a support ticket; the reply goes to this email address
+      const res = await fetch("/api/support", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: form.name, email: form.email, subject: form.subject, body: form.message }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setError(data.details?.[0]?.message ?? data.error ?? "Could not send your message. Please try again.");
+        return;
+      }
+      setSent(true);
+    } catch {
+      setError("Could not send your message. Please check your connection.");
+    } finally {
+      setSending(false);
+    }
   };
 
   return (
@@ -431,7 +453,7 @@ function ContactUs() {
           { icon: "📍", label: "Address", value: "Kathmandu, Nepal", sub: "Thamel, Kathmandu 44600" },
         ].map(c => (
           <div key={c.label} className="rounded-2xl p-5" style={{ border: `1px solid ${BORDER}`, backgroundColor: IVORY }}>
-            <div className="text-3xl mb-3">{c.icon}</div>
+            <div className="text-3xl mb-3"><EmojiIcon emoji={c.icon} /></div>
             <p className="text-xs font-bold mb-1" style={{ color: MUTED }}>{c.label}</p>
             <p className="font-bold text-sm" style={{ color: "var(--color-heading)" }}>{c.value}</p>
             <p className="text-xs mt-0.5" style={{ color: MUTED }}>{c.sub}</p>
@@ -442,7 +464,7 @@ function ContactUs() {
       <h3 className="font-black text-base mb-4" style={{ color: "var(--color-heading)" }}>Send Us a Message</h3>
       {sent ? (
         <div className="rounded-2xl p-8 text-center" style={{ border: `1px solid ${BORDER}`, backgroundColor: IVORY }}>
-          <div className="text-5xl mb-3">✅</div>
+          <div className="text-5xl mb-3"><EmojiIcon emoji="✅" /></div>
           <p className="font-black text-lg mb-1" style={{ color: "var(--color-heading)" }}>Message Sent!</p>
           <p className="text-sm" style={{ color: MUTED }}>Thank you for reaching out. We'll get back to you within 24 hours.</p>
           <button
@@ -474,12 +496,14 @@ function ContactUs() {
               onBlur={e => { e.currentTarget.style.borderColor = BORDER; }}
             />
           </div>
+          {error && <p className="text-sm text-red-600">{error}</p>}
           <button
             type="submit"
-            className="px-8 py-3 rounded-xl font-bold text-sm text-white transition-opacity hover:opacity-90"
+            disabled={sending}
+            className="px-8 py-3 rounded-xl font-bold text-sm text-white transition-opacity hover:opacity-90 disabled:opacity-60"
             style={{ backgroundColor: GOLD }}
           >
-            Send Message
+            {sending ? "Sending…" : "Send Message"}
           </button>
         </form>
       )}
@@ -544,7 +568,7 @@ export function CustomerCarePage() {
                     borderLeft: activeSection === s.key ? `3px solid ${GOLD}` : "3px solid transparent",
                   }}
                 >
-                  <span>{s.icon}</span>
+                  <span><EmojiIcon emoji={s.icon} /></span>
                   <span>{s.label}</span>
                 </button>
               ))}

@@ -16,6 +16,7 @@ export default function VerifyPaymentPage() {
     const gateway = params.get("gateway");
     const orderId = params.get("orderId");
     const pidx = params.get("pidx"); // Khalti appends this on return
+    const sessionId = params.get("session_id"); // Stripe Checkout appends this on return
 
     if (!orderId) {
       setMessage("Missing order information.");
@@ -23,11 +24,18 @@ export default function VerifyPaymentPage() {
       return;
     }
 
-    if (gateway === "khalti" && pidx) {
-      fetch("/api/payments/khalti", {
+    const verify =
+      gateway === "khalti" && pidx
+        ? { url: "/api/payments/khalti", body: { action: "verify", pidx, orderId } }
+        : gateway === "stripe" && sessionId
+          ? { url: "/api/payments/stripe", body: { action: "verify", sessionId, orderId } }
+          : null;
+
+    if (verify) {
+      fetch(verify.url, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "verify", pidx, orderId }),
+        body: JSON.stringify(verify.body),
       })
         .then((r) => r.json())
         .then((data) => {

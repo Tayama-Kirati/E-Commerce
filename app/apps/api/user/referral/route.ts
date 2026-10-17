@@ -1,43 +1,38 @@
-import { generateReferralCode } from "@/app/lib/auth-utils";
-import { authOptions } from "@/app/lib/auth";
+import { NextResponse } from "next/server";
 import { prisma } from "@/app/lib/prisma";
-import { getServerSession } from "next-auth";
-import { NextRequest, NextResponse } from "next/server";
+import { requireUser, appUrl } from "@/app/lib/api";
+import { ensureReferralCode } from "@/app/lib/referrals";
+import { getSettings } from "@/app/lib/settings";
 
-export async function getReferralHandler(req: NextRequest) {
- const session = await getServerSession(authOptions);
- if (!session?.user)
- return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+// ─── GET /api/user/referral — the user's referral code and results ───────────
 
- let referral = await prisma.referral.findFirst({
- where: { referrerId: session.user.id },
- orderBy: { createdAt: "asc" },
- });
+export async function GET() {
+  const auth = await requireUser();
+  if (auth.error) return auth.error;
 
- if (!referral) {
- const code = generateReferralCode(session.user.id);
- referral = await prisma.referral.create({
- data: {
- referrerId: session.user.id,
- referredId: session.user.id, // placeholder — updated on conversion
- code,
- },
- });
- }
+  const [code, settings, referrals, earned] = await Promise.all([
+    ensureReferralCode(auth.user.id),
+    getSettings(),
+    prisma.referral.findMany({
+      where: { referrerId: auth.user.id },
+      orderBy: { createdAt: "desc" },
+      include: { referred: { select: { name: true, createdAt: true } } },
+    }),
+    prisma.loyaltyTransaction.aggregate({ where: { userId: auth.user.id, type: "REFERRAL" }, _sum: { points: true } }),
+  ]);
 
- const totalReferrals = await prisma.referral.count({
- where: { referrerId: session.user.id, isConverted: true },
- });
-
- const totalEarned = await prisma.loyaltyTransaction.aggregate({
- where: { userId: session.user.id, type: "REFERRAL" },
- _sum: { points: true },
- });
-
- return NextResponse.json({
- code: referral.code,
- referralUrl: `${process.env.NEXTAUTH_URL}/register?ref=${referral.code}`,
- totalReferrals,
- totalPointsEarned: totalEarned._sum.points ?? 0,
- });
+  return NextResponse.json({
+    code,
+    referralUrl: appUrl(`/register?ref=${code}`),
+    rewardPoints: Number(settings.referralRewardPoints),
+    totalReferrals: referrals.filter((r) => r.isConverted).length,
+    pendingReferrals: referrals.filter((r) => !r.isConverted).length,
+    totalPointsEarned: earned._sum.points ?? 0,
+    referrals: referrals.map((r) => ({
+      name: r.referred.name ?? "New member",
+      joinedAt: r.referred.createdAt,
+      converted: r.isConverted,
+      rewardPoints: r.rewardPoints,
+    })),
+  });
 }

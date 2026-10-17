@@ -2,8 +2,10 @@
 import { useState } from "react";
 import { cn, useUIStore } from "@/app/lib/store";
 
+import { EmojiIcon } from "@/app/components/ui/EmojiIcon";
 export function RegisterPage() {
- const { nav, showToast } = useUIStore();
+ const { nav, showToast, pageData } = useUIStore();
+ const intendedRole = (pageData?.role as string) ?? "CUSTOMER";
  const [form, setForm] = useState({ firstName:"", lastName:"", email:"", phone:"", password:"", confirmPassword:"", accept:false });
  const [showPass,    setShowPass]    = useState(false);
  const [showConfirm, setShowConfirm] = useState(false);
@@ -46,8 +48,8 @@ export function RegisterPage() {
      setLoading(false);
      return;
    }
-   showToast("Account created! Check your email to verify your account.");
-   nav("login");
+   showToast("Account created! Sign in to continue.");
+   nav("login", { role: intendedRole });
  } catch {
    showToast("Registration failed. Please try again.");
    setLoading(false);
@@ -64,7 +66,7 @@ export function RegisterPage() {
  <h1 className="text-2xl font-black text-gray-900 dark:text-white mb-1">Create your account</h1>
  <p className="text-gray-400 text-sm mb-5">Join 3M+ shoppers on Pea<span style={{ color: "#C68313" }}>Nut</span></p>
  <div className="flex items-center gap-3 bg-linear-to-r from-violet-50 to-orange-50 dark:from-violet-900/20 dark:to-orange-900/20 border border-violet-100 dark:border-violet-800 rounded-2xl px-4 py-3 mb-6">
- <span className="text-xl">🎁</span>
+ <span className="text-xl"><EmojiIcon emoji="🎁" /></span>
  <div><p className="text-sm font-bold text-gray-900 dark:text-white">100 welcome points on sign up!</p><p className="text-xs text-gray-500">Worth रू 10 · usable on first order</p></div>
  </div>
  <form onSubmit={submit} className="space-y-4">
@@ -105,7 +107,7 @@ export function RegisterPage() {
  </label>
  {errors.accept && <p className="text-xs text-red-500">{errors.accept}</p>}
  <button type="submit" disabled={loading} className="w-full flex items-center justify-center gap-2 py-3.5 rounded-2xl font-black text-sm bg-orange-500 text-white hover:bg-orange-600 active:bg-orange-700 transition-all active:scale-[0.98] disabled:opacity-60">
- {loading ? <div className="w-5 h-5 border-2 border-white/40 border-t-white rounded-full animate-spin" /> : <><span>Create Account</span><span>→</span></>}
+ {loading ? <div className="w-5 h-5 border-2 border-white/40 border-t-white rounded-full animate-spin" /> : <><span>Create Account</span><span><EmojiIcon emoji="→" /></span></>}
  </button>
  </form>
  <p className="text-center text-sm text-gray-500 mt-5">Already have an account? <button onClick={() => nav("login")} className="text-violet-600 font-black hover:underline">Sign in</button></p>

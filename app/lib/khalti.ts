@@ -1,4 +1,5 @@
-const KHALTI_BASE = "https://dev.khalti.com/api/v2";
+// Sandbox by default; set KHALTI_BASE_URL=https://khalti.com/api/v2 in production
+const KHALTI_BASE = process.env.KHALTI_BASE_URL ?? "https://dev.khalti.com/api/v2";
  
 export async function initiateKhaltiPayment(params: {
   orderId:    string;

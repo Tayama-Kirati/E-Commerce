@@ -21,6 +21,7 @@ import { cn, timeAgo } from "@/app/lib/utils";
 import { useDebounce } from "@/app/hooks/useDebounce";
 import { toast } from "react-hot-toast";
 
+import { EmojiIcon } from "@/app/components/ui/EmojiIcon";
 const PRIORITY_COLORS: Record<string, string> = {
  URGENT: "bg-red-200 text-red-800 dark:bg-red-900/40",
  HIGH: "bg-red-100 text-red-700 dark:bg-red-900/30",
@@ -306,7 +307,7 @@ export default function AdminSupportPage() {
  onClick={() => closeTicket(active.id)}
  className="px-2.5 py-1 bg-green-100 hover:bg-green-200 dark:bg-green-900/30 text-green-700 text-xs font-bold rounded-lg transition-colors"
  >
- ✓ Resolve
+ <EmojiIcon emoji="✓" /> Resolve
  </button>
  <button onClick={() => setActive(null)} aria-label="Close">
  <X className="w-4 h-4 text-gray-400" />

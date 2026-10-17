@@ -7,6 +7,7 @@ import { ShoppingCart, Heart, Star, ChevronLeft } from "lucide-react";
 import { useCartStore } from "@/app/store/cartStore";
 import { toast } from "react-hot-toast";
 
+import { EmojiIcon } from "@/app/components/ui/EmojiIcon";
 type Product = {
  id: string;
  name: string;
@@ -83,7 +84,7 @@ export default function ProductDetailPage() {
  <div className="aspect-square bg-gray-50 dark:bg-gray-800 rounded-2xl overflow-hidden border border-gray-100 dark:border-gray-800">
  {product.images[activeImg] ? (
  <Image src={product.images[activeImg].url} alt={product.name} width={600} height={600} className="w-full h-full object-cover" />
- ) : <div className="w-full h-full flex items-center justify-center text-6xl">🛍️</div>}
+ ) : <div className="w-full h-full flex items-center justify-center text-6xl"><EmojiIcon emoji="🛍️" /></div>}
  </div>
  {product.images.length > 1 && (
  <div className="flex gap-2 overflow-x-auto">
@@ -139,7 +140,7 @@ export default function ProductDetailPage() {
  {product.seller && (
  <div className="p-4 bg-gray-50 dark:bg-gray-800 rounded-xl">
  <p className="text-sm text-gray-500">Sold by <span className="font-semibold text-gray-900 dark:text-white">{product.seller.storeName}</span>
- {product.seller.isVerified && <span className="ml-1 text-blue-600">✓</span>}</p>
+ {product.seller.isVerified && <span className="ml-1 text-blue-600"><EmojiIcon emoji="✓" /></span>}</p>
  </div>
  )}
  </div>

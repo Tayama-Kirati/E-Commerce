@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import Image from "next/image";
 import { useCartStore, useUIStore } from "@/app/lib/store";
 
+import { EmojiIcon } from "@/app/components/ui/EmojiIcon";
 const GOLD     = "#C68313";
 const BORDER   = "#E8E8E8";
 const MUTED    = "var(--color-muted)";
@@ -234,7 +235,7 @@ function AddressModal({
                   backgroundColor: f.label === lbl ? "#FFF8F0" : "transparent",
                 }}
               >
-                {lbl === "OFFICE" ? "🏢" : "🏠"} {lbl}
+                {lbl === "OFFICE" ? <EmojiIcon emoji={"🏢"} /> : <EmojiIcon emoji={"🏠"} />} {lbl}
               </button>
             ))}
           </div>
@@ -531,31 +532,18 @@ export function CheckoutPage() {
           return;
         }
         showToast(payData.error ?? "Failed to initiate Khalti payment.", "error");
-      } else if (payMethod === "ESEWA") {
-        const res = await fetch("/api/payments/esewa", {
+      } else if (payMethod === "STRIPE") {
+        const res = await fetch("/api/payments/stripe/initiate", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ orderId }),
         });
         const payData = await res.json();
-        if (payData.params) {
-          // eSewa requires a form POST to their gateway
-          const form = document.createElement("form");
-          form.method = "POST";
-          form.action = "https://uat.esewa.com.np/epay/main";
-          form.style.display = "none";
-          Object.entries(payData.params).forEach(([k, v]) => {
-            const input = document.createElement("input");
-            input.type = "hidden";
-            input.name = k;
-            input.value = String(v);
-            form.appendChild(input);
-          });
-          document.body.appendChild(form);
-          form.submit();
+        if (payData.paymentUrl) {
+          window.location.href = payData.paymentUrl;
           return;
         }
-        showToast(payData.error ?? "Failed to initiate eSewa payment.", "error");
+        showToast(payData.error ?? "Failed to start card payment.", "error");
       }
     } catch {
       showToast("Payment gateway error. Your order was saved — contact support.", "error");
@@ -568,7 +556,7 @@ export function CheckoutPage() {
   if (confirmed) return (
     <div className="max-w-lg mx-auto px-4 py-16 text-center">
       <div className="w-24 h-24 rounded-full flex items-center justify-center mx-auto mb-5 text-5xl" style={{ backgroundColor: "#DCFCE7" }}>
-        ✅
+        <EmojiIcon emoji="✅" />
       </div>
       <h2 className="text-2xl font-black mb-2" style={{ color: CHARCOAL }}>Order Confirmed!</h2>
       <div className="rounded-2xl p-4 mb-6 inline-block" style={{ backgroundColor: "#FFF8F0", border: `1px solid ${BORDER}` }}>
@@ -727,7 +715,7 @@ export function CheckoutPage() {
                           className="object-cover"
                         />
                       ) : (
-                        <div className="w-full h-full flex items-center justify-center text-2xl">🛍️</div>
+                        <div className="w-full h-full flex items-center justify-center text-2xl"><EmojiIcon emoji="🛍️" /></div>
                       )}
                     </div>
                     <div className="flex-1 min-w-0">
@@ -760,7 +748,7 @@ export function CheckoutPage() {
             <h3 className="font-black text-sm mb-3" style={{ color: CHARCOAL }}>Promotion</h3>
             {couponApplied ? (
               <div className="flex items-center justify-between px-3 py-2 rounded" style={{ backgroundColor: "#DCFCE7", border: "1px solid #16A34A" }}>
-                <span className="text-sm font-semibold text-green-700">✓ {couponApplied} — रू {couponDiscount.toLocaleString()} off</span>
+                <span className="text-sm font-semibold text-green-700"><EmojiIcon emoji="✓" /> {couponApplied} — रू {couponDiscount.toLocaleString()} off</span>
                 <button onClick={removeCoupon} className="text-xs text-green-600 hover:text-red-500 font-bold transition-colors">Remove</button>
               </div>
             ) : (
@@ -829,7 +817,7 @@ export function CheckoutPage() {
               <div className="space-y-2">
                 {[
                   { id: "KHALTI",           label: "Khalti",           icon: "🟣" },
-                  { id: "ESEWA",            label: "eSewa",            icon: "🟢" },
+                  { id: "STRIPE",           label: "Card (Visa / Mastercard)", icon: "💳" },
                   { id: "CASH_ON_DELIVERY", label: "Cash on Delivery", icon: "💵" },
                 ].map(m => (
                   <label
@@ -841,7 +829,7 @@ export function CheckoutPage() {
                     }}
                   >
                     <input type="radio" name="pay" value={m.id} checked={payMethod === m.id} onChange={() => setPayMethod(m.id)} className="sr-only"/>
-                    <span className="text-lg">{m.icon}</span>
+                    <span className="text-lg"><EmojiIcon emoji={m.icon} /></span>
                     <span className="flex-1 text-sm font-semibold" style={{ color: CHARCOAL }}>{m.label}</span>
                     <div className="w-4 h-4 rounded-full border-2 flex items-center justify-center" style={{ borderColor: payMethod === m.id ? GOLD : BORDER }}>
                       {payMethod === m.id && <div className="w-2 h-2 rounded-full" style={{ backgroundColor: GOLD }}/>}

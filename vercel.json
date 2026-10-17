@@ -1,0 +1,5 @@
+{
+  "crons": [
+    { "path": "/api/payments/reconcile", "schedule": "*/10 * * * *" }
+  ]
+}

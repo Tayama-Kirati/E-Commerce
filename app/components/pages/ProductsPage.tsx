@@ -1,9 +1,32 @@
 "use client";
 import { useState, useEffect } from "react";
 import Image from "next/image";
-import { formatPrice, useUIStore, useDebounce, apiGet, useCartStore, useWishlistStore } from "@/app/lib/store";
+import { formatPrice, useUIStore, useDebounce, apiGet, useCartStore, MOCK_PRODUCTS, MOCK_CATEGORIES } from "@/app/lib/store";
+
+// Returns all slugs that belong to catSlug and every descendant category
+function getDescendantSlugs(cats: any[], targetSlug: string): string[] {
+  function find(list: any[]): any | null {
+    for (const c of list) {
+      if (c.slug === targetSlug) return c;
+      const found = find(c.children ?? []);
+      if (found) return found;
+    }
+    return null;
+  }
+  function collect(c: any, acc: string[]) {
+    acc.push(c.slug);
+    (c.children ?? []).forEach((ch: any) => collect(ch, acc));
+  }
+  const node = find(cats);
+  if (!node) return [targetSlug];
+  const slugs: string[] = [];
+  collect(node, slugs);
+  return slugs;
+}
 import { ProductCard } from "./ProductCard";
 
+import { LayoutGrid, List } from "lucide-react";
+import { EmojiIcon, EmojiText } from "@/app/components/ui/EmojiIcon";
 const GOLD     = "#C68313";
 const CHARCOAL = "var(--color-heading)";
 const BORDER   = "#E8D5A8";
@@ -32,47 +55,24 @@ const COLOR_DOT: Record<string, string> = {
   Grey: "#9CA3AF", Purple: "#8B5CF6", "Space Gray": "#4B5563",
 };
 
-const ALL_COLORS = ["Black","White","Silver","Gold","Red","Blue","Green","Orange","Grey","Purple","Space Gray"];
 
 function IconGrid() {
-  return (
-    <svg viewBox="0 0 20 20" className="w-4 h-4" fill="currentColor">
-      <rect x="2" y="2" width="7" height="7" rx="1.5"/>
-      <rect x="11" y="2" width="7" height="7" rx="1.5"/>
-      <rect x="2" y="11" width="7" height="7" rx="1.5"/>
-      <rect x="11" y="11" width="7" height="7" rx="1.5"/>
-    </svg>
-  );
+  return <LayoutGrid className="w-4 h-4" strokeWidth={1.75} />;
 }
 
 function IconList() {
-  return (
-    <svg viewBox="0 0 20 20" className="w-4 h-4" fill="currentColor">
-      <rect x="2" y="3" width="16" height="3.5" rx="1.5"/>
-      <rect x="2" y="8.25" width="16" height="3.5" rx="1.5"/>
-      <rect x="2" y="13.5" width="16" height="3.5" rx="1.5"/>
-    </svg>
-  );
+  return <List className="w-4 h-4" strokeWidth={1.75} />;
 }
 
-function IconHeart({ filled }: { filled: boolean }) {
-  return (
-    <svg viewBox="0 0 24 24" className="w-4 h-4" fill={filled ? "#EF4444" : "none"} stroke={filled ? "#EF4444" : "currentColor"} strokeWidth={2}>
-      <path strokeLinecap="round" strokeLinejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/>
-    </svg>
-  );
-}
 
 function ProductListCard({ product: p }: { product: any }) {
   const { addItem }   = useCartStore();
   const { nav }       = useUIStore();
-  const { toggle: toggleWish, isIn: inWish } = useWishlistStore();
   const { cartItems } = useCartStore();
   const inCart = cartItems.some(i => i.id === p.id);
   const price  = Number(p.basePrice ?? p.price ?? 0);
   const orig   = Number(p.comparePrice ?? p.originalPrice ?? 0);
   const disc   = orig > price ? Math.round(((orig - price) / orig) * 100) : 0;
-  const fav    = inWish(p.id);
   const rating = (p.rating ?? p.averageRating ?? 0);
 
   return (
@@ -86,7 +86,7 @@ function ProductListCard({ product: p }: { product: any }) {
         {p.images?.[0]?.url ? (
           <Image src={p.images[0].url} alt={p.images[0].alt ?? p.name} fill sizes="144px" className="object-cover transition-transform duration-500 group-hover:scale-105" />
         ) : (
-          <div className="w-full h-full flex items-center justify-center text-5xl transition-transform duration-500 group-hover:scale-105">🛍️</div>
+          <div className="w-full h-full flex items-center justify-center text-5xl transition-transform duration-500 group-hover:scale-105"><EmojiIcon emoji="🛍️" /></div>
         )}
         {disc > 0 && (
           <span className="absolute top-2 left-2 text-[10px] font-black px-2 py-0.5 rounded-full text-white" style={{ backgroundColor: "#1C1A16" }}>{disc}% off</span>
@@ -109,7 +109,7 @@ function ProductListCard({ product: p }: { product: any }) {
             {p.name}
           </button>
           {p.description && <p className="text-xs line-clamp-2 leading-relaxed" style={{ color: MUTED }}>{p.description}</p>}
-          {p.freeShipping && <p className="text-[10px] font-semibold mt-1.5" style={{ color: "#16A34A" }}>🚚 Free shipping</p>}
+          {p.freeShipping && <p className="text-[10px] font-semibold mt-1.5" style={{ color: "#16A34A" }}><EmojiIcon emoji="🚚" /> Free shipping</p>}
           {(PRODUCT_COLORS[p.id] ?? []).length > 0 && (
             <div className="flex gap-1 mt-2">
               {(PRODUCT_COLORS[p.id] ?? []).map(c => (
@@ -123,7 +123,7 @@ function ProductListCard({ product: p }: { product: any }) {
         <div className="flex flex-col items-end justify-between shrink-0">
           <div className="flex items-center gap-0.5">
             {[1,2,3,4,5].map(s => (
-              <span key={s} className="text-xs" style={{ color: rating >= s ? GOLD : "#D1C5A8" }}>★</span>
+              <span key={s} className="text-xs" style={{ color: rating >= s ? GOLD : "#D1C5A8" }}><EmojiIcon emoji="★" /></span>
             ))}
             <span className="text-[10px] ml-1 font-semibold" style={{ color: MUTED }}>{rating.toFixed(1)}</span>
           </div>
@@ -132,20 +132,13 @@ function ProductListCard({ product: p }: { product: any }) {
             {orig > price && <div className="text-[11px] line-through" style={{ color: MUTED }}>{formatPrice(orig)}</div>}
           </div>
           <div className="flex items-center gap-2">
-            <button onClick={() => toggleWish(p.id)} title="Save to Wishlist"
-              className="w-9 h-9 rounded-full flex items-center justify-center shadow-sm transition-all duration-200 active:scale-90"
-              style={{ backgroundColor: fav ? "rgba(239,68,68,0.1)" : "rgba(255,255,255,0.95)", border: `1px solid ${fav ? "#EF4444" : BORDER}`, color: fav ? "#EF4444" : CHARCOAL }}
-              onMouseEnter={e => { e.currentTarget.style.backgroundColor = "rgba(239,68,68,0.1)"; e.currentTarget.style.borderColor = "#EF4444"; e.currentTarget.style.color = "#EF4444"; }}
-              onMouseLeave={e => { if (!fav) { e.currentTarget.style.backgroundColor = "rgba(255,255,255,0.95)"; e.currentTarget.style.borderColor = BORDER; e.currentTarget.style.color = CHARCOAL; } }}>
-              <IconHeart filled={fav} />
-            </button>
             {p.stock > 0 && (
               <button onClick={() => addItem(p)}
                 className="px-4 py-2 rounded-full text-xs font-black text-white transition-all duration-200 active:scale-95"
                 style={{ backgroundColor: inCart ? "#9B6210" : GOLD }}
                 onMouseEnter={e => { e.currentTarget.style.backgroundColor = inCart ? "#9B6210" : "#A36810"; }}
                 onMouseLeave={e => { e.currentTarget.style.backgroundColor = inCart ? "#9B6210" : GOLD; }}>
-                {inCart ? "✓ Added" : "Add to bag"}
+                <EmojiText>{inCart ? "✓ Added" : "Add to bag"}</EmojiText>
               </button>
             )}
           </div>
@@ -155,18 +148,9 @@ function ProductListCard({ product: p }: { product: any }) {
   );
 }
 
-function FilterSection({ title, children }: { title: string; children: React.ReactNode }) {
-  return (
-    <div className="mb-5">
-      <p className="text-sm font-bold mb-3" style={{ color: CHARCOAL }}>{title}</p>
-      {children}
-      <div className="border-t border-gray-200 dark:border-gray-700 mt-5" />
-    </div>
-  );
-}
 
 export function ProductsPage() {
-  const { searchQuery, pageData } = useUIStore();
+  const { searchQuery, setSearchQuery, pageData } = useUIStore();
   const [products, setProducts]   = useState<any[]>([]);
   const [categories, setCategories] = useState<any[]>([]);
   const [loading, setLoading]     = useState(true);
@@ -175,19 +159,7 @@ export function ProductsPage() {
   const [totalPages, setTotalPages] = useState(1);
   const [catSlug, setCatSlug]     = useState<string>("");
   const [flashSale, setFlashSale] = useState(false);
-  const [maxPrice, setMaxPrice]   = useState(300000);
-  const [minPrice, setMinPrice]   = useState(0);
-  const [minRating, setMinRating] = useState(0);
-  const [inStock, setInStock]     = useState(false);
-  const [selectedBrands, setSelectedBrands] = useState<Set<string>>(new Set());
-  const [selectedColors, setSelectedColors] = useState<Set<string>>(new Set());
   const [viewMode, setViewMode]   = useState<"grid" | "list">("grid");
-
-  // AI search state
-  const [aiQuery, setAiQuery]         = useState("");
-  const [aiLoading, setAiLoading]     = useState(false);
-  const [aiActive, setAiActive]       = useState(false);
-  const [aiUnderstood, setAiUnderstood] = useState<string>("");
 
   const dSearch = useDebounce(searchQuery, 400);
 
@@ -196,9 +168,6 @@ export function ProductsPage() {
     setFlashSale(!!pageData?.flashSale);
     if (pageData?.sort) setSort(pageData.sort);
     setPage(1);
-    // Clear AI search when navigating via category
-    setAiActive(false);
-    setAiUnderstood("");
   }, [pageData]);
 
   useEffect(() => {
@@ -209,9 +178,8 @@ export function ProductsPage() {
 
   useEffect(() => { setPage(1); }, [sort, dSearch, catSlug, flashSale]);
 
-  // Regular keyword search fetch
+  // Keyword search fetch
   useEffect(() => {
-    if (aiActive) return; // AI search overrides regular fetch
     setLoading(true);
     const p = new URLSearchParams({ limit: "24", sort, page: String(page) });
     if (dSearch)   p.set("search", dSearch);
@@ -219,241 +187,88 @@ export function ProductsPage() {
     if (flashSale) p.set("flashSale", "true");
     apiGet(`/api/products?${p}`, null)
       .then((d) => {
-        setProducts(d?.products ?? []);
-        setTotalPages(d?.totalPages ?? 1);
+        const api: any[] = d?.products ?? [];
+
+        // Only accept API results that actually belong to the selected category
+        // (or any of its descendants) — DB slugs may not match mock slugs.
+        const relevantSlugs = catSlug ? getDescendantSlugs(MOCK_CATEGORIES, catSlug) : [];
+        const relevant = catSlug
+          ? api.filter((item: any) => relevantSlugs.includes(item.category?.slug))
+          : api;
+
+        if (relevant.length > 0) {
+          setProducts(relevant);
+          setTotalPages(catSlug ? 1 : d?.totalPages ?? 1);
+        } else if (!catSlug && api.length > 0) {
+          // No category filter — show everything the API returned
+          setProducts(api);
+          setTotalPages(d?.totalPages ?? 1);
+        } else {
+          // Nothing matched → fall back to mock data, matching the clicked
+          // category AND all its subcategories/sub-subcategories
+          const mock = catSlug
+            ? (() => {
+                const slugs = getDescendantSlugs(MOCK_CATEGORIES, catSlug);
+                const hits = MOCK_PRODUCTS.filter((mp: any) => slugs.includes(mp.category?.slug));
+                return hits.length > 0 ? hits : MOCK_PRODUCTS;
+              })()
+            : MOCK_PRODUCTS;
+          setProducts(mock);
+          setTotalPages(1);
+        }
         setLoading(false);
       })
-      .catch(() => setLoading(false));
-  }, [sort, dSearch, catSlug, flashSale, page, aiActive]);
-
-  // AI search handler
-  const runAiSearch = async () => {
-    if (!aiQuery.trim()) return;
-    setAiLoading(true);
-    setAiActive(false);
-    try {
-      const res  = await fetch("/api/ai/search", {
-        method:  "POST",
-        headers: { "Content-Type": "application/json" },
-        body:    JSON.stringify({ query: aiQuery }),
+      .catch(() => {
+        const mock = catSlug
+          ? (() => {
+              const slugs = getDescendantSlugs(MOCK_CATEGORIES, catSlug);
+              const hits = MOCK_PRODUCTS.filter((mp: any) => slugs.includes(mp.category?.slug));
+              return hits.length > 0 ? hits : MOCK_PRODUCTS;
+            })()
+          : MOCK_PRODUCTS;
+        setProducts(mock);
+        setLoading(false);
       });
-      const data = await res.json();
-      if (res.ok) {
-        setProducts(data.products ?? []);
-        setTotalPages(1);
-        setAiActive(true);
-        // Build a human-readable summary of what Claude understood
-        const p = data.params ?? {};
-        const parts = [];
-        if (p.keywords)    parts.push(`"${p.keywords}"`);
-        if (p.category)    parts.push(p.category);
-        if (p.maxPrice)    parts.push(`under रू ${Number(p.maxPrice).toLocaleString()}`);
-        if (p.minPrice)    parts.push(`above रू ${Number(p.minPrice).toLocaleString()}`);
-        if (p.minRating)   parts.push(`${p.minRating}+ stars`);
-        if (p.freeShipping) parts.push("free shipping");
-        if (p.isFlashSale)  parts.push("flash sale");
-        setAiUnderstood(parts.join(" · ") || aiQuery);
-      }
-    } catch { /* fallback: do nothing, regular search still works */ }
-    setAiLoading(false);
-  };
-
-  const clearAiSearch = () => {
-    setAiActive(false);
-    setAiQuery("");
-    setAiUnderstood("");
-  };
-
-  // Unique brands from loaded products
-  const brands = Array.from(new Set(products.map(p => p.seller?.storeName ?? "PeaNut Store").filter(Boolean)));
-
-  const toggleBrand = (b: string) => setSelectedBrands(prev => {
-    const s = new Set(prev); s.has(b) ? s.delete(b) : s.add(b); return s;
-  });
-  const toggleColor = (c: string) => setSelectedColors(prev => {
-    const s = new Set(prev); s.has(c) ? s.delete(c) : s.add(c); return s;
-  });
+  }, [sort, dSearch, catSlug, flashSale, page]);
 
   const filtered = products.filter((p) => {
-    // Category — use slug if available (real API data), otherwise fuzzy-match name
-    if (catSlug) {
-      const pSlug = p.category?.slug as string | undefined;
-      if (pSlug) {
-        if (pSlug !== catSlug && !pSlug.startsWith(catSlug)) return false;
-      } else {
-        const pName = (p.category?.name ?? "").toLowerCase();
-        const base  = catSlug.split("-")[0]; // "home" from "home-living"
-        if (!pName.includes(base) && !base.includes(pName)) return false;
-      }
-    }
-    const price = Number(p.basePrice ?? p.price ?? 0);
-    if (price < minPrice || price > maxPrice) return false;
-    if ((p.rating ?? p.averageRating ?? 0) < minRating) return false;
     if (flashSale && !p.isFlashSale) return false;
-    if (inStock && (p.stock ?? 1) <= 0) return false;
-    if (selectedBrands.size > 0 && !selectedBrands.has(p.seller?.storeName ?? "PeaNut Store")) return false;
-    if (selectedColors.size > 0) {
-      const pColors = PRODUCT_COLORS[p.id];
-      if (pColors && !pColors.some(c => selectedColors.has(c))) return false;
-    }
     return true;
   });
 
   const activeFilters = [
-    ...(catSlug       ? [{ key: `cat-${catSlug}`, label: categories.find(c => c.slug === catSlug)?.name ?? catSlug, clear: () => setCatSlug("") }] : []),
-    ...(flashSale     ? [{ key: "flash",  label: "Flash Sale",         clear: () => setFlashSale(false) }] : []),
-    ...(minRating > 0 ? [{ key: "rating", label: `${minRating}+ Stars`, clear: () => setMinRating(0)   }] : []),
-    ...(inStock       ? [{ key: "stock",  label: "In Stock",            clear: () => setInStock(false)  }] : []),
-    ...[...selectedBrands].map(b => ({ key: `brand-${b}`, label: b, clear: () => toggleBrand(b) })),
-    ...[...selectedColors].map(c => ({ key: `color-${c}`, label: c, clear: () => toggleColor(c) })),
+    ...(catSlug   ? [{ key: `cat-${catSlug}`, label: categories.find((c: any) => c.slug === catSlug)?.name ?? catSlug, clear: () => setCatSlug("") }] : []),
+    ...(flashSale ? [{ key: "flash", label: "Flash Sale", clear: () => setFlashSale(false) }] : []),
   ];
 
-  const clearAll = () => {
-    setCatSlug(""); setFlashSale(false); setMinRating(0); setInStock(false);
-    setMaxPrice(300000); setMinPrice(0); setSelectedBrands(new Set()); setSelectedColors(new Set());
-  };
+  const clearAll = () => { setCatSlug(""); setFlashSale(false); };
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-8">
-      <div className="flex flex-col lg:flex-row gap-8">
+      <div className="flex-1 min-w-0">
 
-        {/* ── Filter Sidebar ─────────────────────────────────────────── */}
-        <aside className="lg:w-52 shrink-0">
-          <div className="flex items-center justify-between mb-5">
-            <h3 className="font-black text-base" style={{ color: CHARCOAL }}>Filters</h3>
-            {activeFilters.length > 0 && (
-              <button onClick={clearAll} className="text-xs font-bold hover:underline" style={{ color: GOLD }}>Clear All</button>
-            )}
-          </div>
-
-          {/* Price */}
-          <FilterSection title="Price (रू)">
-            <div className="flex gap-2 mb-3">
-              <input type="number" value={minPrice} min={0} max={maxPrice}
-                onChange={e => setMinPrice(+e.target.value)}
-                placeholder="Min" className="w-full px-2 py-1.5 text-xs rounded-lg outline-none"
-                style={{ border: `1.5px solid ${BORDER}`, color: CHARCOAL }}
-                onFocus={e => e.target.style.borderColor = GOLD}
-                onBlur={e => e.target.style.borderColor = BORDER} />
-              <input type="number" value={maxPrice} min={minPrice} max={300000}
-                onChange={e => setMaxPrice(+e.target.value)}
-                placeholder="Max" className="w-full px-2 py-1.5 text-xs rounded-lg outline-none"
-                style={{ border: `1.5px solid ${BORDER}`, color: CHARCOAL }}
-                onFocus={e => e.target.style.borderColor = GOLD}
-                onBlur={e => e.target.style.borderColor = BORDER} />
-            </div>
-            <input type="range" min={0} max={300000} step={5000} value={maxPrice}
-              onChange={e => setMaxPrice(+e.target.value)} className="w-full accent-[#C68313]" />
-            <p className="text-[11px] mt-1" style={{ color: MUTED }}>{formatPrice(minPrice)} – {formatPrice(maxPrice)}</p>
-          </FilterSection>
-
-          {/* Rating */}
-          <FilterSection title="Rating">
-            <div className="space-y-2">
-              {[5,4,3,2,1].map(r => (
-                <label key={r} className="flex items-center gap-2 cursor-pointer">
-                  <input type="radio" name="rating" checked={minRating === r}
-                    onChange={() => setMinRating(minRating === r ? 0 : r)}
-                    className="w-4 h-4 cursor-pointer accent-[#C68313]" />
-                  <span className="text-amber-400 text-sm leading-none">{"★".repeat(r)}{"☆".repeat(5-r)}</span>
-                  <span className="text-xs" style={{ color: MUTED }}>&amp; up</span>
-                </label>
-              ))}
-            </div>
-          </FilterSection>
-
-          {/* Brand */}
-          <FilterSection title="Brand">
-            <div className="space-y-2 max-h-40 overflow-y-auto pr-1">
-              {brands.map(b => (
-                <label key={b} className="flex items-center gap-2.5 cursor-pointer">
-                  <input type="checkbox" checked={selectedBrands.has(b)} onChange={() => toggleBrand(b)}
-                    className="w-4 h-4 rounded cursor-pointer accent-[#C68313]" />
-                  <span className="text-xs truncate" style={{ color: CHARCOAL }}>{b}</span>
-                </label>
-              ))}
-            </div>
-          </FilterSection>
-
-          {/* Color */}
-          <FilterSection title="Color">
-            <div className="flex flex-wrap gap-2">
-              {ALL_COLORS.map(c => (
-                <button key={c} title={c} onClick={() => toggleColor(c)}
-                  className="w-6 h-6 rounded-full transition-all shrink-0"
-                  style={{
-                    backgroundColor: COLOR_DOT[c] ?? "#ccc",
-                    border: selectedColors.has(c) ? `2.5px solid ${GOLD}` : "2px solid #E8D5A8",
-                    boxShadow: selectedColors.has(c) ? `0 0 0 1px ${GOLD}` : "none",
-                    transform: selectedColors.has(c) ? "scale(1.2)" : "scale(1)",
-                  }} />
-              ))}
-            </div>
-            {selectedColors.size > 0 && (
-              <p className="text-[11px] mt-2" style={{ color: MUTED }}>{[...selectedColors].join(", ")}</p>
-            )}
-          </FilterSection>
-
-          {/* Availability */}
-          <FilterSection title="Availability">
-            <div className="space-y-2">
-              <label className="flex items-center gap-2.5 cursor-pointer">
-                <input type="checkbox" checked={inStock} onChange={() => setInStock(v => !v)}
-                  className="w-4 h-4 rounded cursor-pointer accent-[#C68313]" />
-                <span className="text-xs" style={{ color: CHARCOAL }}>In Stock Only</span>
-              </label>
-              <label className="flex items-center gap-2.5 cursor-pointer">
-                <input type="checkbox" checked={flashSale} onChange={() => setFlashSale(v => !v)}
-                  className="w-4 h-4 rounded cursor-pointer accent-[#C68313]" />
-                <span className="text-xs" style={{ color: CHARCOAL }}>Flash Sale</span>
-              </label>
-            </div>
-          </FilterSection>
-        </aside>
-
-        {/* ── Main content ────────────────────────────────────────────── */}
-        <div className="flex-1 min-w-0">
-
-          {/* AI Search bar */}
-          <div className="mb-5 rounded-2xl p-4" style={{ border: `1.5px solid ${BORDER}`, backgroundColor: IVORY }}>
-            <p className="text-[11px] font-black uppercase tracking-widest mb-2" style={{ color: GOLD }}>✦ AI Search</p>
-            <div className="flex gap-2">
+          {/* Search bar */}
+          <div className="mb-5 flex gap-2">
+            <div className="relative flex-1">
+              <svg className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none" style={{ color: MUTED }} fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35" strokeLinecap="round"/>
+              </svg>
               <input
-                value={aiQuery}
-                onChange={e => setAiQuery(e.target.value)}
-                onKeyDown={e => e.key === "Enter" && runAiSearch()}
-                placeholder='Try: "wireless headphones under 50000" or "gifts for kids"'
-                className="flex-1 px-4 py-2.5 rounded-xl text-sm outline-none"
+                value={searchQuery}
+                onChange={e => setSearchQuery(e.target.value)}
+                placeholder="Search products…"
+                className="w-full pl-10 pr-4 py-2.5 rounded-xl text-sm outline-none"
                 style={{ border: `1.5px solid ${BORDER}`, color: CHARCOAL, backgroundColor: "var(--color-bg)" }}
                 onFocus={e => e.target.style.borderColor = GOLD}
                 onBlur={e => e.target.style.borderColor = BORDER}
               />
-              <button
-                onClick={runAiSearch}
-                disabled={aiLoading || !aiQuery.trim()}
-                className="px-5 py-2.5 rounded-xl text-sm font-bold text-white transition-all disabled:opacity-50"
-                style={{ backgroundColor: GOLD }}
-              >
-                {aiLoading ? "…" : "Search"}
-              </button>
-              {aiActive && (
-                <button onClick={clearAiSearch}
-                  className="px-4 py-2.5 rounded-xl text-sm font-bold transition-all"
-                  style={{ border: `1.5px solid ${BORDER}`, color: CHARCOAL }}>
-                  ✕ Clear
-                </button>
+              {searchQuery && (
+                <button
+                  onClick={() => setSearchQuery("")}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 text-lg leading-none"
+                >×</button>
               )}
             </div>
-            {aiActive && aiUnderstood && (
-              <p className="text-xs mt-2 font-medium" style={{ color: MUTED }}>
-                AI understood: <span style={{ color: GOLD }}>{aiUnderstood}</span>
-              </p>
-            )}
-            {!aiActive && (
-              <p className="text-xs mt-2" style={{ color: MUTED }}>
-                Describe what you need in plain words — AI will find matching products for you.
-              </p>
-            )}
           </div>
 
           {/* Top bar */}
@@ -461,7 +276,9 @@ export function ProductsPage() {
             <p className="text-sm" style={{ color: MUTED }}>
               Showing <span className="font-semibold" style={{ color: CHARCOAL }}>{filtered.length}</span> results
             </p>
-            <div className="flex items-center gap-3">
+            <div className="relative flex items-center gap-3">
+
+              {/* View toggle + Filter button */}
               <div className="flex items-center rounded-xl overflow-hidden" style={{ border: `1px solid ${BORDER}` }}>
                 <button onClick={() => setViewMode("grid")} title="Grid view"
                   className="w-9 h-9 flex items-center justify-center transition-all duration-200"
@@ -516,7 +333,7 @@ export function ProductsPage() {
             )
           ) : filtered.length === 0 ? (
             <div className="text-center py-24">
-              <div className="text-6xl mb-4">🔍</div>
+              <div className="text-6xl mb-4"><EmojiIcon emoji="🔍" /></div>
               <h3 className="text-xl font-black mb-2" style={{ color: CHARCOAL }}>No products found</h3>
               <p style={{ color: MUTED }}>Try adjusting your filters</p>
               <button onClick={clearAll} className="mt-4 px-6 py-2.5 rounded-full text-sm font-bold text-white" style={{ backgroundColor: GOLD }}>
@@ -585,7 +402,6 @@ export function ProductsPage() {
               </button>
             </div>
           )}
-        </div>
       </div>
     </div>
   );

@@ -1,8 +1,9 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Image from "next/image";
-import { useUIStore } from "@/app/lib/store";
+import { useUIStore, useAuthStore, apiGet } from "@/app/lib/store";
 
+import { EmojiIcon } from "@/app/components/ui/EmojiIcon";
 const GOLD     = "#C68313";
 const CHARCOAL = "var(--color-heading)";
 const BORDER   = "#E8D5A8";
@@ -10,7 +11,7 @@ const MUTED    = "var(--color-muted)";
 const IVORY    = "var(--color-surface-warm)";
 const GREEN    = "#16A34A";
 
-// ─── Mock data ────────────────────────────────────────────────────────────────
+// ─── Progress steps ───────────────────────────────────────────────────────────
 
 const RETURN_STEPS = [
   "We have received your return request",
@@ -29,62 +30,18 @@ const CANCEL_STEPS = [
   "Refund approved",
 ];
 
-const MOCK_RETURNS = [
-  {
-    id: "ret1",
-    type: "return",
-    orderId: "ORD-2460281366628",
-    raCode: "RN505428100536628",
-    returnedOn: "2026-02-08 08:13:30",
-    refundMethod: "WALLET_IMEPAY",
-    statusStep: 5,
-    statusNote: "If you have selected the pick-up option, the courier will contact you. If you have selected the drop-off option, please drop your return product to the nearest hub. Please pack the return product(s) securely and stick the return shipping label or write the tracking number and order number on the outer side of the package.",
-    statusNoteDate: "2026-02-08 08:13:30",
-    product: {
-      name: "Samsung Galaxy S24 Ultra 256GB Titanium Black",
-      image: "https://picsum.photos/seed/10/200/200",
-      price: 185000,
-      qty: 1,
-      reason: "I received the wrong item",
-    },
-  },
-  {
-    id: "ret2",
-    type: "return",
-    orderId: "ORD-2100271756628",
-    raCode: "RN505428100421001",
-    returnedOn: "2025-11-19 18:13:47",
-    refundMethod: "WALLET_IMEPAY",
-    statusStep: 5,
-    statusNote: "Your return has been processed and refund approved.",
-    statusNoteDate: "2025-11-20 10:00:00",
-    product: {
-      name: "MacBook Pro 14 M4 Pro 512GB Silver",
-      image: "https://picsum.photos/seed/40/200/200",
-      price: 375000,
-      qty: 1,
-      reason: "Item not as described",
-    },
-  },
-  {
-    id: "can1",
-    type: "cancellation",
-    orderId: "ORD-1900032156001",
-    raCode: "CN505428100098765",
-    returnedOn: "2025-08-14 14:22:10",
-    refundMethod: "ORIGINAL_PAYMENT",
-    statusStep: 4,
-    statusNote: "Your cancellation request has been approved. Refund will reflect in 3-5 business days.",
-    statusNoteDate: "2025-08-14 16:00:00",
-    product: {
-      name: "Levi's 511 Slim Fit Jeans Dark Wash 32x30",
-      image: "https://picsum.photos/seed/180/200/200",
-      price: 7500,
-      qty: 2,
-      reason: "Changed my mind",
-    },
-  },
-];
+type ReturnItem = {
+  id: string;
+  type: "return" | "cancellation";
+  orderId: string;
+  raCode: string;
+  returnedOn: string;
+  refundMethod: string;
+  statusStep: number;
+  statusNote: string;
+  statusNoteDate: string;
+  product: { name: string; image: string | null; price: number; qty: number; reason: string };
+};
 
 // ─── Status label helper ──────────────────────────────────────────────────────
 
@@ -151,7 +108,7 @@ function ProgressTracker({ steps, currentStep }: { steps: string[]; currentStep:
 
 // ─── Return Detail View ───────────────────────────────────────────────────────
 
-function ReturnDetail({ item, onBack }: { item: typeof MOCK_RETURNS[0]; onBack: () => void }) {
+function ReturnDetail({ item, onBack }: { item: ReturnItem; onBack: () => void }) {
   const steps = item.type === "return" ? RETURN_STEPS : CANCEL_STEPS;
 
   return (
@@ -226,7 +183,9 @@ function ReturnDetail({ item, onBack }: { item: typeof MOCK_RETURNS[0]; onBack: 
         <div className="px-6 py-4" style={{ borderTop: `1px solid ${BORDER}` }}>
           <div className="flex items-start gap-4">
             <div className="relative w-16 h-16 rounded-lg overflow-hidden shrink-0" style={{ border: `1px solid ${BORDER}` }}>
-              <Image src={item.product.image} alt={item.product.name} fill className="object-cover" sizes="64px" />
+              {item.product.image
+                ? <Image src={item.product.image} alt={item.product.name} fill className="object-cover" sizes="64px" />
+                : <div className="w-full h-full flex items-center justify-center text-2xl" style={{ color: MUTED }}><EmojiIcon emoji="📦" /></div>}
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-sm font-semibold line-clamp-2" style={{ color: CHARCOAL }}>{item.product.name}</p>
@@ -252,11 +211,18 @@ function ReturnDetail({ item, onBack }: { item: typeof MOCK_RETURNS[0]; onBack: 
 export function MyReturnsPage() {
   const { nav } = useUIStore();
   const [filter, setFilter]   = useState<"all" | "return" | "cancellation">("all");
-  const [detail, setDetail]   = useState<typeof MOCK_RETURNS[0] | null>(null);
+  const [detail, setDetail]   = useState<ReturnItem | null>(null);
 
   if (detail) return <ReturnDetail item={detail} onBack={() => setDetail(null)} />;
 
-  const filtered = MOCK_RETURNS.filter(r => filter === "all" || r.type === filter);
+  const { user } = useAuthStore();
+  const [items, setItems] = useState<ReturnItem[]>([]);
+  useEffect(() => {
+    if (!user) return;
+    apiGet("/api/user/returns", null).then((d: any) => setItems(d?.items ?? []));
+  }, [user]);
+
+  const filtered = items.filter(r => filter === "all" || r.type === filter);
 
   return (
     <div className="min-h-screen py-6" style={{ backgroundColor: "var(--color-bg)" }}>
@@ -300,7 +266,7 @@ export function MyReturnsPage() {
         {/* List */}
         {filtered.length === 0 ? (
           <div className="text-center py-16" style={{ color: MUTED }}>
-            <div className="text-5xl mb-3">📦</div>
+            <div className="text-5xl mb-3"><EmojiIcon emoji="📦" /></div>
             <p className="text-lg font-semibold">No requests found</p>
             <p className="text-sm mt-1">You have no {filter === "all" ? "return or cancellation" : filter} requests.</p>
             <button
@@ -364,13 +330,17 @@ export function MyReturnsPage() {
                       className="relative w-16 h-16 rounded-lg overflow-hidden shrink-0"
                       style={{ border: `1px solid ${BORDER}` }}
                     >
-                      <Image
-                        src={item.product.image}
-                        alt={item.product.name}
-                        fill
-                        sizes="64px"
-                        className="object-cover"
-                      />
+                      {item.product.image ? (
+                        <Image
+                          src={item.product.image}
+                          alt={item.product.name}
+                          fill
+                          sizes="64px"
+                          className="object-cover"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center text-2xl" style={{ color: MUTED }}><EmojiIcon emoji="📦" /></div>
+                      )}
                     </div>
 
                     <div className="flex-1 min-w-0">

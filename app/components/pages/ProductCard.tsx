@@ -2,6 +2,7 @@
 import Image from "next/image";
 import { formatPrice, useCartStore, useUIStore, useWishlistStore } from "@/app/lib/store";
 
+import { EmojiIcon, EmojiText } from "@/app/components/ui/EmojiIcon";
 const GOLD     = "#C68313";
 const CHARCOAL = "var(--color-heading)";
 const BORDER   = "#E8D5A8";
@@ -77,7 +78,7 @@ export function ProductCard({ product: p }: { product: any }) {
           />
         ) : (
           <div className="w-full h-full flex items-center justify-center text-6xl transition-transform duration-500 group-hover:scale-105">
-            🛍️
+            <EmojiIcon emoji="🛍️" />
           </div>
         )}
 
@@ -162,7 +163,7 @@ export function ProductCard({ product: p }: { product: any }) {
             style={{ backgroundColor: inCart ? "#9B6210" : "#1C1A16" }}
             onMouseEnter={e => { (e.currentTarget as HTMLDivElement).style.backgroundColor = GOLD; }}
             onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.backgroundColor = inCart ? "#9B6210" : "#1C1A16"; }}>
-            {inCart ? "✓ Added to cart" : `Quick add — ${formatPrice(price)}`}
+            <EmojiText>{inCart ? "✓ Added to cart" : `Quick add — ${formatPrice(price)}`}</EmojiText>
           </div>
         )}
       </div>
@@ -172,7 +173,7 @@ export function ProductCard({ product: p }: { product: any }) {
         <div className="flex items-center justify-between mb-0.5">
           <p className="text-[10px]" style={{ color: MUTED }}>{p.category?.name ?? p.seller?.storeName}</p>
           <div className="flex items-center gap-0.5">
-            <span className="text-[10px]" style={{ color: GOLD }}>★</span>
+            <span className="text-[10px]" style={{ color: GOLD }}><EmojiIcon emoji="★" /></span>
             <span className="text-[10px] font-semibold" style={{ color: MUTED }}>{(p.rating ?? p.averageRating ?? 0).toFixed(1)}</span>
           </div>
         </div>
@@ -191,7 +192,7 @@ export function ProductCard({ product: p }: { product: any }) {
         </div>
 
         {p.freeShipping && (
-          <p className="text-[10px] font-semibold mt-1" style={{ color: "#16A34A" }}>🚚 Free shipping</p>
+          <p className="text-[10px] font-semibold mt-1" style={{ color: "#16A34A" }}><EmojiIcon emoji="🚚" /> Free shipping</p>
         )}
       </div>
     </div>

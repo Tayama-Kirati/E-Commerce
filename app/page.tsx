@@ -1,5 +1,6 @@
 "use client";
 import { useState, useEffect, useCallback, useMemo } from "react";
+import { useSession, signOut } from "next-auth/react";
 import {
   CartCtx, UICtx, AuthCtx, WishCtx,
   User, CartItem, Toast,
@@ -13,6 +14,7 @@ import { CartSidebar }     from "@/app/components/pages/CartSidebar";
 import { NotifPanel }      from "@/app/components/pages/NotifPanel";
 import { Footer }          from "@/app/components/pages/Footer";
 import { ToastMessage }    from "@/app/components/pages/ToastMessage";
+import { ChatWidget }      from "@/app/components/pages/ChatWidget";
 
 // Pages
 import { HomePage }          from "@/app/components/pages/HomePage";
@@ -45,15 +47,30 @@ const SELLER_BLOCKED = new Set([
 ]);
 
 export default function App() {
-  const [user,          setUser]       = useState<User | null>(() => {
-    if (typeof window === "undefined") return null;
-    try { const s = localStorage.getItem("peanut_user"); return s ? JSON.parse(s) : null; }
-    catch { return null; }
-  });
+  // The signed-in user always comes from the NextAuth session (an httpOnly cookie),
+  // so it can't drift from what the server sees.
+  const { data: session, status: sessionStatus } = useSession();
+  const [user,          setUserState]  = useState<User | null>(null);
+
+  useEffect(() => {
+    if (sessionStatus === "loading") return;
+    const su = session?.user as any;
+    setUserState(su ? { name: su.name ?? su.email, email: su.email, role: su.role ?? "CUSTOMER" } : null);
+    try { localStorage.removeItem("peanut_user"); } catch {}
+  }, [session, sessionStatus]);
+
+  const setUser = useCallback((u: User | null) => {
+    setUserState(u);
+    // Signing out from any page must also end the server session
+    if (!u) {
+      fetch("/api/auth/logout", { method: "POST" }).catch(() => {});
+      signOut({ redirect: false });
+    }
+  }, []);
   const [cartItems,     setCartItems]  = useState<CartItem[]>([]);
   const [cartOpen,      setCartOpen]   = useState(false);
   const [cartSyncing,   setCartSyncing]= useState(false);
-  const [wishIds,       setWishIds]    = useState<string[]>(["2","6"]);
+  const [wishIds,       setWishIds]    = useState<string[]>([]);
   const [page,          setPage]       = useState("home");
   const [pageData,      setPageData]   = useState<any>(null);
   const [darkMode,      setDarkMode]   = useState(false);
@@ -61,6 +78,11 @@ export default function App() {
   const [notifOpen,     setNotifOpen]  = useState(false);
   const [toast,         setToast]      = useState<Toast | null>(null);
   const [searchQuery,   setSearchQuery]= useState("");
+  const [maintenance,   setMaintenance]= useState(false);
+
+  useEffect(() => {
+    apiGet("/api/settings/public", null).then((s: any) => setMaintenance(!!s?.maintenanceMode));
+  }, []);
 
   const showToast = useCallback((msg: string, type: Toast["type"] = "success") => {
     setToast({ msg, type, id: Date.now() });
@@ -72,7 +94,9 @@ export default function App() {
     // Redirect sellers away from customer-only pages
     const target = (role === "SELLER" && SELLER_BLOCKED.has(p)) ? "seller" : p;
     setPage(target); setPageData(data);
-    const url = target === "home" ? "/" : `/?page=${target}`;
+    // Simple ids (product slug, order id, store slug) go in the URL so the page can be shared and refreshed
+    const id = typeof data === "string" || typeof data === "number" ? `&id=${encodeURIComponent(String(data))}` : "";
+    const url = target === "home" ? "/" : `/?page=${target}${id}`;
     window.history.pushState({ page: target, pageData: data }, "", url);
     window.scrollTo({ top: 0, behavior: "smooth" });
     setMobileMenu(false);
@@ -84,16 +108,22 @@ export default function App() {
   const cartGrand    = cartTotal + cartShipping;
 
   const addItem = useCallback(async (product: any, qty = 1) => {
+    if (!user) {
+      showToast("Please login first to add items to cart", "error");
+      setPage("login");
+      setPageData(null);
+      window.history.pushState({ page: "login", pageData: null }, "", "/?page=login");
+      window.scrollTo({ top: 0, behavior: "smooth" });
+      return;
+    }
     setCartItems(prev => {
       const ex = prev.find(i => i.id === product.id);
       if (ex) return prev.map(i => i.id === product.id ? { ...i, qty: Math.min(i.qty + qty, product.stock) } : i);
       return [...prev, { ...product, qty }];
     });
     showToast(`${product.name.slice(0, 30)}… added to cart 🛒`);
-    if (user) {
-      const res = await apiPost("/api/cart", { productId: product.id, quantity: qty });
-      if (res?.error) showToast("Sync failed — item added locally", "error");
-    }
+    const res = await apiPost("/api/cart", { productId: product.id, variantId: product.variantId ?? null, quantity: qty });
+    if (res?.error) showToast("Sync failed — item added locally", "error");
   }, [user, showToast]);
 
   const removeItem = useCallback(async (id: any) => {
@@ -136,10 +166,15 @@ export default function App() {
 
   useEffect(() => { if (user) mergeGuestCart(); }, [user?.email]);
 
-  // Seed the initial history state so the first entry is navigable
+  // Open the page named in the URL (deep links, shared links, email redirects)
+  // and seed the history state so the first entry is navigable
   useEffect(() => {
-    const p = new URLSearchParams(window.location.search).get("page") || "home";
-    window.history.replaceState({ page: p, pageData: null }, "", window.location.href);
+    const params = new URLSearchParams(window.location.search);
+    const p = params.get("page") || "home";
+    const id = params.get("id");
+    setPage(p);
+    setPageData(id as any);
+    window.history.replaceState({ page: p, pageData: id }, "", window.location.href);
   }, []);
 
   // Browser back / forward
@@ -154,11 +189,25 @@ export default function App() {
     return () => window.removeEventListener("popstate", onPop);
   }, []);
 
+  // Load the saved wishlist whenever someone signs in; clear it on sign-out
+  useEffect(() => {
+    if (!user) { setWishIds([]); return; }
+    apiGet("/api/user/wishlist", null).then((d: any) => setWishIds(d?.ids ?? []));
+  }, [user?.email]);
+
   const toggleWishlist = useCallback(async (productId: any) => {
+    if (!user) {
+      showToast("Please login to save items to your wishlist", "error");
+      return;
+    }
     const already = wishIds.includes(productId);
     setWishIds(prev => already ? prev.filter(x => x !== productId) : [...prev, productId]);
     showToast(already ? "Removed from wishlist" : "Saved to wishlist");
-    if (user) await apiPost("/api/user/wishlist", { productId });
+    const res = await apiPost("/api/user/wishlist", { productId, wishlisted: !already });
+    if (!res || res.error) {
+      setWishIds(prev => already ? [...prev, productId] : prev.filter(x => x !== productId));
+      showToast("Could not update wishlist", "error");
+    }
   }, [wishIds, user, showToast]);
 
   const isInWishlist = useCallback((id: any) => wishIds.includes(id), [wishIds]);
@@ -192,10 +241,6 @@ export default function App() {
     ids: wishIds, toggle: toggleWishlist, isIn: isInWishlist,
   }), [wishIds, toggleWishlist, isInWishlist]);
 
-  useEffect(() => {
-    if (user) localStorage.setItem("peanut_user", JSON.stringify(user));
-    else localStorage.removeItem("peanut_user");
-  }, [user]);
 
   // When a seller logs in (or page loads with seller session), redirect to seller hub
   useEffect(() => {
@@ -207,6 +252,20 @@ export default function App() {
   }, [user?.role]);
 
   useEffect(() => { document.documentElement.classList.toggle("dark", darkMode); }, [darkMode]);
+
+  // Maintenance mode: everyone but admins sees a holding page (admins can still sign in)
+  if (maintenance && !authCtx.isAdmin && page !== "login") {
+    return (
+      <div className="min-h-screen flex items-center justify-center px-6 text-center" style={{ backgroundColor: "var(--color-bg)" }}>
+        <div className="max-w-md">
+          <p className="text-3xl font-black mb-3" style={{ color: "var(--color-heading)" }}>We&apos;ll be right back</p>
+          <p className="text-sm" style={{ color: "var(--color-muted)" }}>
+            PeaNut is down for scheduled maintenance. Your cart and orders are safe — please check back shortly.
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <AuthCtx.Provider value={authCtx}>
@@ -258,6 +317,7 @@ export default function App() {
                 </main>
               </div>
               <Footer />
+              {user?.role !== "SELLER" && <ChatWidget />}
             </div>
           </WishCtx.Provider>
         </CartCtx.Provider>

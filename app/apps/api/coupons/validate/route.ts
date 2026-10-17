@@ -1,48 +1,37 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/app/lib/auth";
-import { prisma } from "@/app/lib/prisma";
+import { requireUser, readJson } from "@/app/lib/api";
+import { checkCoupon } from "@/app/lib/coupons";
+import { quoteShipping } from "@/app/lib/shipping";
+import { getCart } from "@/app/lib/cart";
+
+type Body = { code?: string; orderTotal?: number; orderAmount?: number; subtotal?: number; province?: string };
+
+// ─── POST /api/coupons/validate (also served at /api/orders/validate-coupon) ─
 
 export async function POST(req: NextRequest) {
-  const session = await getServerSession(authOptions);
-  if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const auth = await requireUser();
+  if (auth.error) return auth.error;
 
-  const body = await req.json();
-  const code: string = (body.code ?? "").trim().toUpperCase();
-  const orderTotal: number = Number(body.orderTotal ?? 0);
-
-  if (!code) return NextResponse.json({ error: "Coupon code is required" }, { status: 400 });
-
-  const coupon = await prisma.coupon.findFirst({
-    where: { code, isActive: true },
-  });
-
-  if (!coupon) {
-    return NextResponse.json({ error: "Invalid coupon code" }, { status: 404 });
+  const body = (await readJson<Body>(req)) ?? {};
+  let subtotal = Number(body.orderTotal ?? body.orderAmount ?? body.subtotal ?? NaN);
+  let allFree = false;
+  if (!Number.isFinite(subtotal)) {
+    // Fall back to the server-side cart when the page doesn't send a total
+    const cart = await getCart(auth.user.id, body.province);
+    subtotal = cart.summary.subtotal;
+    allFree = cart.summary.freeShipping;
   }
-  if (coupon.expiresAt && coupon.expiresAt < new Date()) {
-    return NextResponse.json({ error: "This coupon has expired" }, { status: 400 });
-  }
-  if (coupon.maxUses > 0 && coupon.usedCount >= coupon.maxUses) {
-    return NextResponse.json({ error: "This coupon has reached its usage limit" }, { status: 400 });
-  }
-  const minOrder = Number(coupon.minOrder);
-  if (minOrder > 0 && orderTotal < minOrder) {
-    return NextResponse.json(
-      { error: `Minimum order amount is रू ${minOrder.toLocaleString()}` },
-      { status: 400 }
-    );
-  }
+  const shipping = await quoteShipping({ subtotal, allItemsFreeShipping: allFree, province: body.province });
 
-  const discountPct = Number(coupon.discount);
-  const discountAmount =
-    coupon.type === "percent"
-      ? Math.round(orderTotal * (discountPct / 100))
-      : Math.min(discountPct, orderTotal);
+  const check = await checkCoupon({ code: body.code ?? "", userId: auth.user.id, subtotal, shippingCost: shipping.cost });
+  if (!check.ok) return NextResponse.json({ valid: false, error: check.error }, { status: check.status });
 
   return NextResponse.json({
     valid: true,
-    coupon: { id: coupon.id, code: coupon.code, type: coupon.type, discount: discountPct },
-    discountAmount,
+    coupon: { id: check.coupon.id, code: check.coupon.code, type: check.coupon.type, discount: Number(check.coupon.discount) },
+    discountAmount: check.discount,
+    discount: check.discount,
+    freeShipping: check.freeShipping,
+    message: `Coupon ${check.coupon.code} applied — you save रू ${check.discount.toLocaleString()}`,
   });
 }

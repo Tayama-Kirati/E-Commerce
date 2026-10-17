@@ -20,6 +20,7 @@ import {
 import { cn, formatPrice, timeAgo } from "@/app/lib/utils";
 import { toast } from "react-hot-toast";
 
+import { EmojiIcon, EmojiText } from "@/app/components/ui/EmojiIcon";
 const STATUS_CFG: Record<
  string,
  { color: string; bg: string; label: string; icon: string }
@@ -223,7 +224,7 @@ export default function OrdersPage() {
  [...Array(3)].map((_, i) => <OrderCardSkeleton key={i} />)
  ) : filtered.length === 0 ? (
  <div className="text-center py-20">
- <div className="text-6xl mb-4">📭</div>
+ <div className="text-6xl mb-4"><EmojiIcon emoji="📭" /></div>
  <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">
  No orders found
  </h3>
@@ -365,7 +366,7 @@ function OrderCard({
  cfg.color,
  )}
  >
- {cfg.icon} {cfg.label}
+ <EmojiIcon emoji={cfg.icon} /> {cfg.label}
  </span>
  </div>
  </div>
@@ -437,7 +438,7 @@ function OrderCard({
  rel="noopener noreferrer"
  className="text-xs text-blue-600 font-semibold hover:underline shrink-0"
  >
- Track →
+ Track <EmojiIcon emoji="→" />
  </a>
  )}
  </div>
@@ -453,7 +454,7 @@ function OrderCard({
  : "bg-amber-50 dark:bg-amber-900/20",
  )}
  >
- <span className="text-lg">↩️</span>
+ <span className="text-lg"><EmojiIcon emoji="↩️" /></span>
  <div>
  <p className="text-xs font-semibold text-amber-700 dark:text-amber-400">
  Return Request
@@ -568,7 +569,7 @@ function OrderProgressBar({ status }: { status: string }) {
  "ring-2 ring-blue-300 dark:ring-blue-700 scale-110",
  )}
  >
- {done ? "✓" : i + 1}
+ <EmojiText>{done ? "✓" : i + 1}</EmojiText>
  </div>
  {i < steps.length - 1 && (
  <div

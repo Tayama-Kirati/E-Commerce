@@ -6,6 +6,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { Search } from "lucide-react";
 
+import { EmojiIcon } from "@/app/components/ui/EmojiIcon";
 type Product = {
  id: string;
  name: string;
@@ -60,7 +61,7 @@ function SearchResults() {
  <div className="aspect-square bg-gray-50 dark:bg-gray-800 overflow-hidden">
  {p.images[0] ? (
  <Image src={p.images[0].url} alt={p.name} width={300} height={300} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
- ) : <div className="w-full h-full flex items-center justify-center text-4xl">🛍️</div>}
+ ) : <div className="w-full h-full flex items-center justify-center text-4xl"><EmojiIcon emoji="🛍️" /></div>}
  </div>
  <div className="p-3">
  <p className="text-xs text-gray-400 mb-0.5">{p.category?.name}</p>

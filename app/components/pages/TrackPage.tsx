@@ -2,6 +2,7 @@
 import { useState } from "react";
 import { useUIStore, useAuthStore, formatPrice } from "@/app/lib/store";
 
+import { EmojiIcon } from "@/app/components/ui/EmojiIcon";
 const GOLD     = "#C68313";
 const CHARCOAL = "var(--color-heading)";
 const BORDER   = "#E8D5A8";
@@ -70,7 +71,7 @@ function AccountSidebar({ active, onNav }: { active: string; onNav: (p: string) 
             style={active === l.id
               ? { backgroundColor: IVORY, color: CHARCOAL, fontWeight: 600 }
               : { color: MUTED }}>
-            <span className="text-base w-5 text-center">{l.icon}</span>
+            <span className="text-base w-5 text-center"><EmojiIcon emoji={l.icon} /></span>
             {l.label}
           </button>
         ))}
@@ -80,7 +81,7 @@ function AccountSidebar({ active, onNav }: { active: string; onNav: (p: string) 
         <button onClick={() => onNav("home")}
           className="flex items-center gap-2 text-sm font-semibold transition-colors"
           style={{ color: "#EF4444" }}>
-          <span>→</span> Sign out
+          <span><EmojiIcon emoji="→" /></span> Sign out
         </button>
       </div>
     </aside>
@@ -97,7 +98,7 @@ function Timeline({ status }: { status: string }) {
       <div className="flex items-center justify-center py-6">
         <div className="flex items-center gap-2 px-4 py-2 rounded-full text-sm font-bold text-white"
           style={{ backgroundColor: "#EF4444" }}>
-          ✕ Order {status.toLowerCase()}
+          <EmojiIcon emoji="✕" /> Order {status.toLowerCase()}
         </div>
       </div>
     );
@@ -269,7 +270,7 @@ export function TrackPage() {
                             <p className="text-xs font-black" style={{ color: GOLD }}>
                               {new Date(order.updatedAt).toLocaleTimeString("en-NP", { hour:"2-digit", minute:"2-digit" })}
                             </p>
-                            <p className="text-xs mt-0.5" style={{ color: CHARCOAL }}>📍 {order.currentLocation}</p>
+                            <p className="text-xs mt-0.5" style={{ color: CHARCOAL }}><EmojiIcon emoji="📍" /> {order.currentLocation}</p>
                           </div>
                         </div>
                       )}
@@ -285,7 +286,7 @@ export function TrackPage() {
                             <p className="text-xs font-black" style={{ color: GOLD }}>
                               {new Date(order.deliveredAt).toLocaleString("en-NP", { day:"numeric", month:"short", hour:"2-digit", minute:"2-digit" })}
                             </p>
-                            <p className="text-xs mt-0.5" style={{ color: CHARCOAL }}>✅ Package delivered</p>
+                            <p className="text-xs mt-0.5" style={{ color: CHARCOAL }}><EmojiIcon emoji="✅" /> Package delivered</p>
                           </div>
                         </div>
                       )}
@@ -330,10 +331,7 @@ export function TrackPage() {
                           style={{ borderBottom: i < order.items.length - 1 ? `1px solid ${BORDER}` : "none" }}>
                           <div className="w-12 h-12 rounded-xl flex items-center justify-center text-2xl shrink-0 overflow-hidden"
                             style={{ backgroundColor: IVORY }}>
-                            {item.product.images[0]
-                              ? <img src={item.product.images[0].url} alt={item.product.name} className="w-full h-full object-cover" />
-                              : "🛍️"
-                            }
+                            {item.product.images[0] ? <img src={item.product.images[0].url} alt={item.product.name} className="w-full h-full object-cover" /> : <EmojiIcon emoji={"🛍️"} />}
                           </div>
                           <div className="flex-1 min-w-0">
                             <p className="text-xs font-bold truncate" style={{ color: CHARCOAL }}>{item.product.name}</p>
@@ -376,7 +374,7 @@ export function TrackPage() {
 
             {!order && !loading && !error && (
               <div className="bg-white rounded-2xl p-12 text-center" style={{ border: `1px solid ${BORDER}` }}>
-                <p className="text-4xl mb-3">🚚</p>
+                <p className="text-4xl mb-3"><EmojiIcon emoji="🚚" /></p>
                 <p className="font-bold text-base mb-1" style={{ color: CHARCOAL }}>Track your order</p>
                 <p className="text-sm" style={{ color: MUTED }}>Enter your order number above to see real-time status updates</p>
               </div>

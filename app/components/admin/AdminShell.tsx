@@ -40,6 +40,7 @@ import {
 import { cn } from "@/app/lib/utils";
 import { useMemo } from "react";
 
+import { EmojiIcon } from "@/app/components/ui/EmojiIcon";
 interface NavItem {
  id: string;
  label: string;
@@ -432,7 +433,7 @@ function SidebarItem({
  : "text-gray-400 hover:text-white hover:bg-gray-800/70",
  )}
  >
- <span className="shrink-0">{item.icon}</span>
+ <span className="shrink-0"><EmojiIcon emoji={item.icon} /></span>
  {!collapsed && <span className="flex-1 truncate">{item.label}</span>}
  {!collapsed && item.badge && (
  <span
@@ -695,7 +696,7 @@ function AdminNotifDropdown({ onClose }: { onClose: () => void }) {
  !n.read && "bg-blue-50/60 dark:bg-blue-900/10",
  )}
  >
- <span className="text-xl shrink-0 mt-0.5">{n.icon}</span>
+ <span className="text-xl shrink-0 mt-0.5"><EmojiIcon emoji={n.icon} /></span>
  <div className="flex-1 min-w-0">
  <p className="text-sm font-semibold text-gray-900 dark:text-white">
  {n.title}
@@ -794,7 +795,7 @@ function AdminProfileMenu({ session }: { session: any }) {
  onClick={() => setOpen(false)}
  className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
  >
- <span className="text-gray-400">{i.icon}</span>
+ <span className="text-gray-400"><EmojiIcon emoji={i.icon} /></span>
  {i.label}
  </Link>
  ))}
@@ -976,7 +977,7 @@ function CommandPalette({ onClose }: { onClose: () => void }) {
  : "text-gray-400",
  )}
  >
- {item.icon}
+ <EmojiIcon emoji={item.icon} />
  </span>
  {item.label}
  {globalIdx === cursor && (
@@ -993,13 +994,13 @@ function CommandPalette({ onClose }: { onClose: () => void }) {
  <div className="border-t border-gray-100 dark:border-gray-800 px-4 py-2 flex items-center gap-4 text-xs text-gray-400">
  <span className="flex items-center gap-1">
  <kbd className="font-mono bg-gray-100 dark:bg-gray-800 px-1.5 py-0.5 rounded border border-gray-200 dark:border-gray-700">
- ↑↓
+ <EmojiIcon emoji="↑" /><EmojiIcon emoji="↓" />
  </kbd>{" "}
  Navigate
  </span>
  <span className="flex items-center gap-1">
  <kbd className="font-mono bg-gray-100 dark:bg-gray-800 px-1.5 py-0.5 rounded border border-gray-200 dark:border-gray-700">
- ↵
+ <EmojiIcon emoji="↵" />
  </kbd>{" "}
  Open
  </span>

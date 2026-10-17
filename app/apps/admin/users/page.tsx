@@ -32,6 +32,7 @@ import { cn, formatPrice, timeAgo } from "@/app/lib/utils";
 import { useDebounce } from "@/app/hooks/useDebounce";
 import { toast } from "react-hot-toast";
 
+import { EmojiIcon, EmojiText } from "@/app/components/ui/EmojiIcon";
 const ROLE_COLORS: Record<string, string> = {
  CUSTOMER: "bg-blue-100 text-blue-700 dark:bg-blue-900/30",
  SELLER: "bg-blue-100 text-blue-700 dark:bg-blue-900/30",
@@ -165,7 +166,7 @@ export default function AdminUsersPage() {
  key={s.label}
  className="bg-white dark:bg-gray-900 rounded-xl border border-gray-100 dark:border-gray-800 p-4 flex items-center gap-3"
  >
- <span className="text-2xl">{s.icon}</span>
+ <span className="text-2xl"><EmojiIcon emoji={s.icon} /></span>
  <div>
  <p className={cn("text-xl font-black", s.color)}>
  {s.value?.toLocaleString()}
@@ -218,10 +219,10 @@ export default function AdminUsersPage() {
  className="px-3 py-2 bg-gray-50 dark:bg-gray-800 border-0 rounded-xl text-sm text-gray-700 dark:text-gray-300 outline-none"
  >
  <option value="">All Tiers</option>
- <option value="PLATINUM">💎 Platinum</option>
- <option value="GOLD">🥇 Gold</option>
- <option value="SILVER">🥈 Silver</option>
- <option value="BRONZE">🥉 Bronze</option>
+ <option value="PLATINUM">Platinum</option>
+ <option value="GOLD">Gold</option>
+ <option value="SILVER">Silver</option>
+ <option value="BRONZE">Bronze</option>
  </select>
  <select
  value={status}
@@ -332,7 +333,7 @@ export default function AdminUsersPage() {
  <td className="px-4 py-3">
  <div className="flex items-center gap-1">
  <span className="text-sm">
- {TIER_EMOJIS[u.loyaltyTier]}
+ <EmojiText>{TIER_EMOJIS[u.loyaltyTier]}</EmojiText>
  </span>
  <span
  className={cn(
@@ -540,7 +541,7 @@ function UserDetailPanel({
  {user.role}
  </span>
  <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-700">
- {TIER_EMOJIS[user.loyaltyTier]} {user.loyaltyTier}
+ <EmojiText>{TIER_EMOJIS[user.loyaltyTier]}</EmojiText> {user.loyaltyTier}
  </span>
  </div>
  </div>
@@ -946,7 +947,7 @@ export function AdminOrdersPage() {
  </p>
  {o.trackingNumber && (
  <p className="text-xs text-gray-400 mt-0.5">
- 📦 {o.trackingNumber}
+ <EmojiIcon emoji="📦" /> {o.trackingNumber}
  </p>
  )}
  </td>
@@ -1247,17 +1248,17 @@ export function AdminSellersPage() {
  <div className="flex gap-1 mt-0.5">
  {s.isVerified && (
  <span className="text-[10px] bg-blue-100 text-blue-700 px-1.5 rounded font-bold">
- ✓
+ <EmojiIcon emoji="✓" />
  </span>
  )}
  {s.isTopRated && (
  <span className="text-[10px] bg-amber-100 text-amber-700 px-1.5 rounded font-bold">
- ★
+ <EmojiIcon emoji="★" />
  </span>
  )}
  {s.isFastShipper && (
  <span className="text-[10px] bg-green-100 text-green-700 px-1.5 rounded font-bold">
- ⚡
+ <EmojiIcon emoji="⚡" />
  </span>
  )}
  </div>
@@ -1282,7 +1283,7 @@ export function AdminSellersPage() {
  {formatPrice(Number(s.totalRevenue ?? 0))}
  </td>
  <td className="px-4 py-3 text-amber-500 font-semibold">
- ⭐ {(s.averageRating ?? 0).toFixed(1)}
+ <EmojiIcon emoji="⭐" /> {(s.averageRating ?? 0).toFixed(1)}
  </td>
  <td className="px-4 py-3 text-xs text-gray-400 whitespace-nowrap">
  {timeAgo(s.createdAt)}

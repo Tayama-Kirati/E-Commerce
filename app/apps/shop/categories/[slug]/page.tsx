@@ -5,6 +5,7 @@ import { useParams } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 
+import { EmojiIcon } from "@/app/components/ui/EmojiIcon";
 type Product = {
  id: string;
  name: string;
@@ -61,7 +62,7 @@ export default function CategoryPage() {
  {p.images[0] ? (
  <Image src={p.images[0].url} alt={p.images[0].alt ?? p.name} width={300} height={300}
  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
- ) : <div className="w-full h-full flex items-center justify-center text-4xl">🛍️</div>}
+ ) : <div className="w-full h-full flex items-center justify-center text-4xl"><EmojiIcon emoji="🛍️" /></div>}
  </div>
  <div className="p-3">
  <p className="text-sm font-semibold text-gray-900 dark:text-white line-clamp-2 mb-1">{p.name}</p>

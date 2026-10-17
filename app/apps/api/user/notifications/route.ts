@@ -23,15 +23,27 @@ export async function GET(req: NextRequest) {
   return NextResponse.json({ notifications, unreadCount });
 }
 
-// PATCH /api/user/notifications — mark all as read
-export async function PATCH(_req: NextRequest) {
+// PATCH /api/user/notifications — mark all as read, or only { ids: [...] }
+export async function PATCH(req: NextRequest) {
   const session = await getServerSession(authOptions);
   if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  await prisma.notification.updateMany({
-    where: { userId: session.user.id, isRead: false },
+  const body = await req.json().catch(() => null);
+  const ids = Array.isArray(body?.ids) ? body.ids.filter((x: unknown) => typeof x === "string") : null;
+
+  const { count } = await prisma.notification.updateMany({
+    where: { userId: session.user.id, isRead: false, ...(ids && { id: { in: ids } }) },
     data: { isRead: true },
   });
 
-  return NextResponse.json({ success: true });
+  return NextResponse.json({ success: true, updated: count });
+}
+
+// DELETE /api/user/notifications — clear all read notifications
+export async function DELETE() {
+  const session = await getServerSession(authOptions);
+  if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  const { count } = await prisma.notification.deleteMany({ where: { userId: session.user.id, isRead: true } });
+  return NextResponse.json({ success: true, deleted: count });
 }

@@ -22,6 +22,7 @@ import { cn } from "@/app/lib/utils";
 import { toast } from "react-hot-toast";
 import { useDebounce } from "@/app/hooks/useDebounce";
 
+import { EmojiIcon } from "@/app/components/ui/EmojiIcon";
 const RegisterSchema = z
  .object({
  firstName: z.string().min(2, "At least 2 characters").max(50),
@@ -198,7 +199,7 @@ export default function RegisterPage() {
 
  {/* Welcome Points Banner */}
  <div className="bg-linear-to-r from-blue-50 to-blue-400 dark:from-blue-900/20 dark:to-blue-400/20 rounded-2xl p-4 mb-6 flex items-center gap-3 border border-blue-100 dark:border-blue-800/30">
- <span className="text-2xl">🎁</span>
+ <span className="text-2xl"><EmojiIcon emoji="🎁" /></span>
  <div>
  <p className="text-sm font-semibold text-gray-900 dark:text-white">
  100 welcome points

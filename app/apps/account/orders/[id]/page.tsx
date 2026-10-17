@@ -29,6 +29,7 @@ import {
 import { cn, formatPrice, timeAgo } from "@/app/lib/utils";
 import { toast } from "react-hot-toast";
 
+import { EmojiIcon, EmojiText } from "@/app/components/ui/EmojiIcon";
 // ─── Order Detail Page ────────────────────────────────────────────────────
 
 export default function OrderDetailPage() {
@@ -192,7 +193,7 @@ export default function OrderDetailPage() {
  cfg.color,
  )}
  >
- {cfg.icon} {cfg.label}
+ <EmojiIcon emoji={cfg.icon} /> {cfg.label}
  </span>
  </h1>
  <p className="text-sm text-gray-400 mt-0.5">
@@ -343,7 +344,7 @@ export default function OrderDetailPage() {
  className="object-cover"
  />
  ) : (
- <span className="text-2xl">🛍️</span>
+ <span className="text-2xl"><EmojiIcon emoji="🛍️" /></span>
  )}
  </Link>
  <div className="flex-1 min-w-0">
@@ -468,7 +469,7 @@ export default function OrderDetailPage() {
 
  {order.pointsEarned > 0 && order.status === "DELIVERED" && (
  <div className="mt-3 pt-3 border-t border-gray-100 dark:border-gray-800 flex items-center gap-2 bg-amber-50 dark:bg-amber-900/20 rounded-xl px-3 py-2">
- <span className="text-xl">🏅</span>
+ <span className="text-xl"><EmojiIcon emoji="🏅" /></span>
  <div>
  <p className="text-xs font-bold text-amber-700 dark:text-amber-400">
  Points Earned
@@ -490,15 +491,13 @@ export default function OrderDetailPage() {
  <div className="flex justify-between">
  <span className="text-gray-500">Method</span>
  <span className="font-semibold text-gray-900 dark:text-white">
- {order.paymentMethod === "KHALTI"
+ <EmojiText>{order.paymentMethod === "KHALTI"
  ? "🟣 Khalti"
- : order.paymentMethod === "ESEWA"
- ? "🟢 eSewa"
  : order.paymentMethod === "STRIPE"
  ? "💳 Card"
  : order.paymentMethod === "CASH_ON_DELIVERY"
  ? "💵 Cash on Delivery"
- : order.paymentMethod}
+ : order.paymentMethod}</EmojiText>
  </span>
  </div>
  <div className="flex justify-between">
@@ -708,7 +707,7 @@ function TrackingTimeline({
  : "bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700 text-gray-300",
  )}
  >
- {step.icon}
+ <EmojiIcon emoji={step.icon} />
  </div>
 
  {/* Content */}

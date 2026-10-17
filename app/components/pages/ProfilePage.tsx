@@ -1,7 +1,9 @@
 "use client";
 import { useState } from "react";
+import { signOut } from "next-auth/react";
 import { formatPrice, MOCK_PRODUCTS, MOCK_ORDERS, useUIStore, useAuthStore, useWishlistStore } from "@/app/lib/store";
 
+import { EmojiIcon, EmojiText } from "@/app/components/ui/EmojiIcon";
 const GOLD     = "#C68313";
 const CHARCOAL = "var(--color-heading)";
 const BORDER   = "#E8D5A8";
@@ -96,7 +98,7 @@ function AddressFormModal({ initial, onSave, onClose }: {
                     backgroundColor: form.label === l ? "rgba(198,131,19,0.08)" : "#FDFAF4",
                     color: form.label === l ? GOLD : MUTED,
                   }}>
-                  {l === "Home" ? "🏠" : l === "Office" ? "🏢" : "📍"} {l}
+                  <EmojiText>{l === "Home" ? "🏠" : l === "Office" ? "🏢" : "📍"}</EmojiText> {l}
                 </button>
               ))}
             </div>
@@ -189,7 +191,7 @@ function AddressFormModal({ initial, onSave, onClose }: {
 
 const INITIAL_PAYMENTS: PayMethod[] = [
   { id:"p1", type:"KHALTI",  last4:"4821", expires:"06/27", isDefault:true  },
-  { id:"p2", type:"ESEWA",   last4:"3309", expires:"12/28", isDefault:false },
+  { id:"p2", type:"VISA",    last4:"3309", expires:"12/28", isDefault:false },
 ];
 
 // ── Shared sidebar ────────────────────────────────────────────────────────────
@@ -222,13 +224,13 @@ function Sidebar({ active, onTab, onSignOut, user }: { active: string; onTab: (t
           <button key={l.id} onClick={() => onTab(l.id)}
             className="flex items-center gap-3 w-full px-3 py-2.5 rounded-xl text-sm transition-all text-left"
             style={active === l.id ? { backgroundColor: IVORY, color: CHARCOAL, fontWeight: 600 } : { color: MUTED }}>
-            <span className="text-base w-5 text-center">{l.icon}</span>{l.label}
+            <span className="text-base w-5 text-center"><EmojiIcon emoji={l.icon} /></span>{l.label}
           </button>
         ))}
       </nav>
       <div className="mt-4 pt-4" style={{ borderTop: `1px solid ${BORDER}` }}>
         <button onClick={onSignOut} className="flex items-center gap-2 text-sm font-semibold" style={{ color: "#EF4444" }}>
-          <span>→</span> Sign out
+          <span><EmojiIcon emoji="→" /></span> Sign out
         </button>
       </div>
     </aside>
@@ -280,7 +282,7 @@ function Dashboard({ user, onTab, nav }: { user: any; onTab: (t: string) => void
             <p className="text-[10px] font-black uppercase tracking-[0.2em]" style={{ color: GOLD }}>Gold Member</p>
             <div className="flex items-center gap-2 text-right">
               <div>
-                <div className="w-8 h-8 rounded-full flex items-center justify-center text-sm mb-1 ml-auto" style={{ backgroundColor: "rgba(198,131,19,0.2)", color: GOLD }}>🏅</div>
+                <div className="w-8 h-8 rounded-full flex items-center justify-center text-sm mb-1 ml-auto" style={{ backgroundColor: "rgba(198,131,19,0.2)", color: GOLD }}><EmojiIcon emoji="🏅" /></div>
                 <p className="text-[10px]" style={{ color: MUTED }}>{toNext.toLocaleString()} pts to Obsidian</p>
               </div>
             </div>
@@ -313,9 +315,9 @@ function Dashboard({ user, onTab, nav }: { user: any; onTab: (t: string) => void
           <div key={s.label} className="bg-white rounded-2xl p-4" style={{ border: `1px solid ${BORDER}` }}>
             <div className="flex items-center justify-between mb-3">
               <div className="w-8 h-8 rounded-lg flex items-center justify-center text-base" style={{ backgroundColor: IVORY }}>
-                {s.icon}
+                <EmojiIcon emoji={s.icon} />
               </div>
-              <span className="text-[10px] font-bold" style={{ color: GOLD }}>{s.sub}</span>
+              <span className="text-[10px] font-bold" style={{ color: GOLD }}><EmojiText>{s.sub}</EmojiText></span>
             </div>
             <p className="text-3xl font-black mb-1" style={{ color: CHARCOAL }}>{s.value}</p>
             <p className="text-[10px] font-bold tracking-wider" style={{ color: MUTED }}>{s.label}</p>
@@ -372,7 +374,7 @@ function Dashboard({ user, onTab, nav }: { user: any; onTab: (t: string) => void
                 className="flex items-center gap-3 w-full py-3 text-left transition-colors group"
                 style={{ borderBottom: i < PICKS.length - 1 ? `1px solid ${BORDER}` : "none" }}>
                 <div className="w-11 h-11 rounded-xl flex items-center justify-center text-2xl shrink-0" style={{ backgroundColor: IVORY }}>
-                  {(p as any).emoji ?? "🛍️"}
+                  <EmojiIcon emoji={(p as any).emoji ?? "🛍️"} />
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-xs font-bold truncate group-hover:underline" style={{ color: CHARCOAL }}>{p.name}</p>
@@ -457,7 +459,7 @@ function AddressesTab({ nav }: { nav: () => void }) {
               {/* Card header */}
               <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-2">
-                  <span className="text-base">{LABEL_ICON[a.label] ?? "📍"}</span>
+                  <span className="text-base"><EmojiIcon emoji={LABEL_ICON[a.label] ?? "📍"} /></span>
                   <p className="font-black text-sm" style={{ color: CHARCOAL }}>{a.label}</p>
                 </div>
                 {a.isDefault && (
@@ -472,7 +474,7 @@ function AddressesTab({ nav }: { nav: () => void }) {
                 {a.line2 && <p>{a.line2}</p>}
                 <p>{a.city}{a.district ? `, ${a.district}` : ""}{a.province ? ` — ${a.province}` : ""}</p>
                 {a.postalCode && <p>PIN: {a.postalCode}, {a.country}</p>}
-                <p className="pt-0.5" style={{ color: CHARCOAL }}>📞 {a.phone}</p>
+                <p className="pt-0.5" style={{ color: CHARCOAL }}><EmojiIcon emoji="📞" /> {a.phone}</p>
               </div>
 
               {/* Actions */}
@@ -548,7 +550,6 @@ function PaymentTab({ nav }: { nav: () => void }) {
 
   const CARD_ICONS: Record<string, { label: string; bg: string }> = {
     KHALTI: { label: "KHALTI", bg: "#5C2D91" },
-    ESEWA:  { label: "ESEWA",  bg: "#60BB46" },
     VISA:   { label: "VISA",   bg: CHARCOAL  },
     MASTER: { label: "MAST",   bg: CHARCOAL  },
   };
@@ -574,7 +575,7 @@ function PaymentTab({ nav }: { nav: () => void }) {
           <div className="mb-4 p-4 rounded-2xl space-y-3" style={{ border: `1.5px dashed ${BORDER}` }}>
             <p className="text-xs font-bold" style={{ color: CHARCOAL }}>Add new payment method</p>
             <div className="grid grid-cols-2 gap-2">
-              {["KHALTI","ESEWA"].map(type => (
+              {["KHALTI","VISA"].map(type => (
                 <button key={type} onClick={() => {
                   setMethods(prev => [...prev, { id:`p${Date.now()}`, type, last4:"0000", expires:"12/29", isDefault:false }]);
                   setAdding(false);
@@ -617,7 +618,7 @@ function PaymentTab({ nav }: { nav: () => void }) {
                     <button onClick={() => setDefault(m.id)} className="text-xs font-semibold" style={{ color: MUTED }}>Set default</button>
                   )}
                   <button onClick={() => showToast("Edit payment — coming soon")} className="text-xs font-semibold" style={{ color: CHARCOAL }}>Edit</button>
-                  <button onClick={() => deleteMethod(m.id)} className="text-sm" style={{ color: "#EF4444" }}>🗑</button>
+                  <button onClick={() => deleteMethod(m.id)} className="text-sm" style={{ color: "#EF4444" }}><EmojiIcon emoji="🗑" /></button>
                 </div>
               </div>
             );
@@ -743,7 +744,7 @@ function SettingsTab({ user, nav }: { user: any; nav: () => void }) {
               <div key={s.label} className="flex items-center justify-between py-3" style={{ borderBottom: `1px solid ${BORDER}` }}>
                 <div>
                   <p className="text-sm font-semibold" style={{ color: CHARCOAL }}>{s.label}</p>
-                  <p className="text-xs" style={{ color: MUTED }}>{s.sub}</p>
+                  <p className="text-xs" style={{ color: MUTED }}><EmojiText>{s.sub}</EmojiText></p>
                 </div>
                 <button onClick={() => showToast("Coming soon")} className="text-xs font-bold" style={{ color: GOLD }}>Manage</button>
               </div>
@@ -770,13 +771,13 @@ export function ProfilePage() {
     setTab(t);
   };
 
-  const signOut = () => { setUser(null); nav("home"); showToast("Signed out"); };
+  const handleSignOut = () => { setUser(null); signOut({ redirect: false }); nav("home"); showToast("Signed out"); };
 
   return (
     <div style={{ backgroundColor: "#FDFBF7", minHeight: "100vh" }}>
       <div className="max-w-7xl mx-auto px-4 py-6">
         <div className="grid grid-cols-1 lg:grid-cols-[260px_1fr] gap-6">
-          <Sidebar active={tab} onTab={handleTab} onSignOut={signOut} user={user} />
+          <Sidebar active={tab} onTab={handleTab} onSignOut={handleSignOut} user={user} />
           <div>
             {tab === "dashboard"  && <Dashboard user={user} onTab={handleTab} nav={p => nav(p)} />}
             {tab === "addresses"  && <AddressesTab nav={() => nav("home")} />}

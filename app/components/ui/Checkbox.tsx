@@ -2,6 +2,7 @@
 
 import React from "react";
 import { cn } from "@/app/lib/utils";
+import { EmojiText } from "@/app/components/ui/EmojiIcon";
 
 interface CheckboxProps {
  label: string;
@@ -36,7 +37,7 @@ export const Checkbox: React.FC<CheckboxProps> = ({
  </svg>
  )}
  </div>
- <span className="text-sm text-gray-700 dark:text-gray-300 flex-1">{label}</span>
+ <span className="text-sm text-gray-700 dark:text-gray-300 flex-1"><EmojiText>{label}</EmojiText></span>
  {count !== undefined && (
  <span className="text-xs text-gray-400">{count}</span>
  )}

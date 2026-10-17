@@ -3,6 +3,7 @@ import { useState, useEffect, useRef } from "react";
 import Image from "next/image";
 import { formatPrice, MOCK_CATEGORIES, useUIStore, useAuthStore } from "@/app/lib/store";
 
+import { EmojiIcon, EmojiText } from "@/app/components/ui/EmojiIcon";
 const GOLD     = "#C68313";
 const CHARCOAL = "var(--color-heading)";
 const BORDER   = "#E8D5A8";
@@ -18,7 +19,7 @@ type SellerProduct = {
 };
 
 type SellerOrder = {
-  id: string; orderNumber: string; customer: string; product: string;
+  id: string; orderNumber: string; customer: string; customerEmail: string; product: string;
   qty: number; total: number;
   status: "PENDING" | "PROCESSING" | "SHIPPED" | "DELIVERED" | "CANCELLED";
   date: string;
@@ -32,17 +33,12 @@ const STATUS_COLORS: Record<string, string> = {
   CANCELLED:  "bg-red-100    text-red-700",
 };
 
-const INITIAL_PRODUCTS: SellerProduct[] = [
-  { id:"sp1", name:"Apple iPhone 16 Pro Max", category:"Electronics", emoji:"📱", basePrice:195000, comparePrice:215000, stock:12, description:"Latest Apple flagship smartphone.", freeShipping:true,  isFlashSale:true,  badge:"New",  status:"active" },
-  { id:"sp2", name:"Sony WH-1000XM6",         category:"Electronics", emoji:"🎧", basePrice:38500,  comparePrice:45000,  stock:45, description:"Premium noise-cancelling headphones.", freeShipping:true, isFlashSale:false, badge:"Sale", status:"active" },
-  { id:"sp3", name:"MacBook Pro M4 14\"",      category:"Electronics", emoji:"💻", basePrice:285000, comparePrice:0,      stock:8,  description:"Apple Silicon powerhouse laptop.", freeShipping:true,  isFlashSale:false, badge:"",     status:"draft"  },
-];
 
 const INITIAL_ORDERS: SellerOrder[] = [
-  { id:"o1", orderNumber:"NX-2025-47832", customer:"Arun Sharma",   product:"Apple iPhone 16 Pro Max", qty:1, total:195000, status:"DELIVERED",  date:"2025-05-18" },
-  { id:"o2", orderNumber:"NX-2025-47234", customer:"Priya Thapa",   product:"Sony WH-1000XM6",         qty:2, total:77000,  status:"SHIPPED",    date:"2025-05-19" },
-  { id:"o3", orderNumber:"NX-2025-48001", customer:"Ram Bahadur",   product:"MacBook Pro M4",           qty:1, total:285000, status:"PROCESSING", date:"2025-05-20" },
-  { id:"o4", orderNumber:"NX-2025-48102", customer:"Sita Maharjan", product:"AirPods Pro 4",            qty:1, total:32000,  status:"PENDING",    date:"2025-05-20" },
+  { id:"o1", orderNumber:"NX-2025-47832", customer:"Arun Sharma",   customerEmail:"arun@example.com",   product:"Apple iPhone 16 Pro Max", qty:1, total:195000, status:"DELIVERED",  date:"2025-05-18" },
+  { id:"o2", orderNumber:"NX-2025-47234", customer:"Priya Thapa",   customerEmail:"priya@example.com",  product:"Sony WH-1000XM6",         qty:2, total:77000,  status:"SHIPPED",    date:"2025-05-19" },
+  { id:"o3", orderNumber:"NX-2025-48001", customer:"Ram Bahadur",   customerEmail:"ram@example.com",    product:"MacBook Pro M4",           qty:1, total:285000, status:"PROCESSING", date:"2025-05-20" },
+  { id:"o4", orderNumber:"NX-2025-48102", customer:"Sita Maharjan", customerEmail:"sita@example.com",   product:"AirPods Pro 4",            qty:1, total:32000,  status:"PENDING",    date:"2025-05-20" },
 ];
 
 const EMOJIS = ["📱","💻","🎧","⌚","📺","🎮","👟","👗","👖","🏠","🍵","📚","💄","⚽","🧹","📖","🎵","🛍️","💍","🎒"];
@@ -51,7 +47,7 @@ function Input({ label, note, ...props }: any) {
   return (
     <div>
       <label className="block text-xs font-bold mb-1" style={{ color: CHARCOAL }}>
-        {label}{note && <span className="font-normal ml-1" style={{ color: MUTED }}>{note}</span>}
+        <EmojiText>{label}</EmojiText>{note && <span className="font-normal ml-1" style={{ color: MUTED }}>{note}</span>}
       </label>
       <input {...props}
         className="w-full px-4 py-2.5 rounded-xl text-sm outline-none transition-all"
@@ -68,13 +64,14 @@ function Toggle({ label, value, onChange }: { label: string; value: boolean; onC
       <div className="w-10 h-5 rounded-full relative transition-colors" style={{ backgroundColor: value ? GOLD : "#D1D5DB" }}>
         <div className="w-4 h-4 bg-white rounded-full absolute top-0.5 shadow-sm transition-all" style={{ left: value ? "22px" : "2px" }} />
       </div>
-      <span className="text-xs font-semibold" style={{ color: CHARCOAL }}>{label}</span>
+      <span className="text-xs font-semibold" style={{ color: CHARCOAL }}><EmojiText>{label}</EmojiText></span>
     </label>
   );
 }
 
-type UploadedImage = { url: string; publicId: string };
+type UploadedImage = { url: string; publicId?: string; mediaType?: "image" | "video" };
 type Category = { id: string; name: string };
+ 
 
 function ProductModal({ product, onSave, onClose }: {
   product: Partial<SellerProduct> | null;
@@ -84,14 +81,14 @@ function ProductModal({ product, onSave, onClose }: {
   const isEdit = !!product?.id;
 
   const [form, setForm] = useState({
-    name:         product?.name        ?? "",
+    name:         product?.name         ?? "",
     categoryId:   "",
-    categoryName: product?.category    ?? "Electronics",
-    emoji:        product?.emoji       ?? "🛍️",
-    basePrice:    product?.basePrice   ?? 0,
+    categoryName: product?.category     ?? "Electronics",
+    emoji:        product?.emoji        ?? "🛍️",
+    basePrice:    product?.basePrice    ?? 0,
     comparePrice: product?.comparePrice ?? 0,
-    stock:        product?.stock       ?? 0,
-    description:  product?.description ?? "",
+    stock:        product?.stock        ?? 0,
+    description:  product?.description  ?? "",
     freeShipping: product?.freeShipping ?? false,
     isFlashSale:  product?.isFlashSale  ?? false,
     badge:        product?.badge        ?? "",
@@ -99,16 +96,48 @@ function ProductModal({ product, onSave, onClose }: {
   });
   const set = (k: string, v: any) => setForm(p => ({ ...p, [k]: v }));
 
-  const [categories, setCategories] = useState<Category[]>(
-    MOCK_CATEGORIES.map(c => ({ id: c.id, name: c.name }))
-  );
-  const [images, setImages]       = useState<UploadedImage[]>([]);
-  const [uploading, setUploading] = useState(false);
-  const [saving, setSaving]       = useState(false);
-  const [errors, setErrors]       = useState<Record<string, string>>({});
+  const [categories,     setCategories]     = useState<Category[]>(MOCK_CATEGORIES.map(c => ({ id: c.id, name: c.name })));
+  const [images,         setImages]         = useState<UploadedImage[]>([]);
+  const [classifying,    setClassifying]    = useState(false);
+  const [uploading,      setUploading]      = useState(false);
+  const [saving,         setSaving]         = useState(false);
+  const [errors,         setErrors]         = useState<Record<string, string>>({});
+  const [newCatOpen,     setNewCatOpen]     = useState(false);
+  const [newCatName,     setNewCatName]     = useState("");
+  const [newCatIcon,     setNewCatIcon]     = useState("");
+  const [newCatSaving,   setNewCatSaving]   = useState(false);
+  const [newCatError,    setNewCatError]    = useState("");
   const fileRef = useRef<HTMLInputElement>(null);
 
-  // Load real categories from API; fall back to mock if unreachable
+  const createCategory = async () => {
+    if (!newCatName.trim()) { setNewCatError("Name is required"); return; }
+    setNewCatSaving(true);
+    setNewCatError("");
+    try {
+      const res  = await fetch("/api/categories", {
+        method:  "POST",
+        headers: { "Content-Type": "application/json" },
+        body:    JSON.stringify({ name: newCatName.trim(), icon: newCatIcon.trim() || null }),
+      });
+      const data = await res.json();
+      if (!res.ok) { setNewCatError(data.error ?? "Failed to create"); return; }
+      const cat: Category = { id: data.category.id, name: data.category.name };
+      setCategories(prev => [...prev, cat].sort((a, b) => a.name.localeCompare(b.name)));
+      set("categoryId", cat.id);
+      set("categoryName", cat.name);
+      setNewCatOpen(false);
+      setNewCatName("");
+      setNewCatIcon("");
+    } catch {
+      setNewCatError("Network error. Try again.");
+    } finally {
+      setNewCatSaving(false);
+    }
+  };
+  // Track which name was last classified to avoid repeat calls
+  const lastClassified = useRef("");
+
+  // Load real categories
   useEffect(() => {
     fetch("/api/categories")
       .then(r => r.ok ? r.json() : null)
@@ -123,6 +152,31 @@ function ProductModal({ product, onSave, onClose }: {
       .catch(() => {});
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // AI-classify category when name is long enough and categories are loaded
+  useEffect(() => {
+    const name = form.name.trim();
+    if (name.length < 4 || categories.length === 0) return;
+    if (lastClassified.current === name) return;
+    const t = setTimeout(async () => {
+      if (lastClassified.current === name) return;
+      lastClassified.current = name;
+      setClassifying(true);
+      try {
+        const res = await fetch("/api/ai/classify-product", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ name, categories }),
+        });
+        if (!res.ok) return;
+        const { categoryId, categoryName } = await res.json();
+        setForm(p => ({ ...p, categoryId, categoryName }));
+      } catch { /* silent */ } finally {
+        setClassifying(false);
+      }
+    }, 700);
+    return () => clearTimeout(t);
+  }, [form.name, categories]); // eslint-disable-line react-hooks/exhaustive-deps
+
   const handleFiles = async (files: FileList) => {
     if (!files.length) return;
     setUploading(true);
@@ -135,18 +189,16 @@ function ProductModal({ product, onSave, onClose }: {
         const res = await fetch("/api/upload", { method: "POST", body: fd });
         if (res.ok) {
           const d = await res.json();
-          added.push({ url: d.url, publicId: d.publicId });
+          added.push({ url: d.url, publicId: d.publicId, mediaType: d.mediaType ?? "image" });
         }
-      } catch { /* skip failed individual uploads */ }
+      } catch { /* skip failed uploads */ }
     }
     setImages(prev => [...prev, ...added]);
     setUploading(false);
-    // reset so re-selecting the same file triggers onChange again
     if (fileRef.current) fileRef.current.value = "";
   };
 
-  const removeImage = (i: number) =>
-    setImages(prev => prev.filter((_, j) => j !== i));
+  const removeImage = (i: number) => setImages(prev => prev.filter((_, j) => j !== i));
 
   const disc = form.comparePrice > form.basePrice
     ? Math.round(((form.comparePrice - form.basePrice) / form.comparePrice) * 100)
@@ -154,11 +206,14 @@ function ProductModal({ product, onSave, onClose }: {
 
   const validate = () => {
     const e: Record<string, string> = {};
-    if (!form.name.trim())       e.name       = "Product name is required";
-    if (form.basePrice <= 0)     e.basePrice  = "Enter a valid price";
-    if (form.stock < 0)          e.stock      = "Enter valid stock quantity";
-    if (!form.categoryId)        e.categoryId = "Select a category";
-    if (!isEdit && !form.description.trim()) e.description = "Description is required";
+    if (!form.name.trim())                    e.name        = "Product name is required";
+    if (!form.basePrice || isNaN(form.basePrice) || form.basePrice <= 0)
+                                              e.basePrice   = "Enter a valid price";
+    if (isNaN(form.stock) || form.stock < 0 || !Number.isInteger(form.stock))
+                                              e.stock       = "Enter a whole number (e.g. 10)";
+    if (!form.categoryId)                     e.categoryId  = "Select a category";
+    if (!isEdit && form.description.trim().length < 10)
+                                              e.description = "Description must be at least 10 characters";
     setErrors(e);
     return Object.keys(e).length === 0;
   };
@@ -168,7 +223,6 @@ function ProductModal({ product, onSave, onClose }: {
     setSaving(true);
 
     if (isEdit) {
-      // Edit path: update local state only (mock products have no DB row)
       onSave({
         id:           product!.id!,
         name:         form.name,
@@ -188,7 +242,6 @@ function ProductModal({ product, onSave, onClose }: {
       return;
     }
 
-    // Create path: POST to API
     try {
       const res = await fetch("/api/products", {
         method: "POST",
@@ -196,7 +249,7 @@ function ProductModal({ product, onSave, onClose }: {
         body: JSON.stringify({
           name:         form.name,
           categoryId:   form.categoryId,
-          description:  form.description || "Quality product from PeaNut marketplace.",
+          description:  form.description.trim().length >= 10 ? form.description : "Quality product from PeaNut marketplace.",
           basePrice:    form.basePrice,
           comparePrice: form.comparePrice > 0 ? form.comparePrice : null,
           stock:        form.stock,
@@ -204,13 +257,15 @@ function ProductModal({ product, onSave, onClose }: {
           isFlashSale:  form.isFlashSale,
           isActive:     form.status === "active",
           tags:         [],
-          images:       images.map(img => ({ url: img.url, publicId: img.publicId, alt: form.name })),
+          images:       images.map((img, i) => ({ url: img.url, alt: `${form.name} ${i + 1}`, ...(img.publicId ? { publicId: img.publicId } : {}) })),
         }),
       });
 
       const data = await res.json();
       if (!res.ok) {
-        setErrors({ _form: data.error ?? "Failed to create product. Please try again." });
+        const detail = data.details?.[0];
+        const fieldMsg = detail ? `${detail.path.join(".") || "field"}: ${detail.message}` : null;
+        setErrors({ _form: fieldMsg ?? data.error ?? "Failed to create product. Please try again." });
         setSaving(false);
         return;
       }
@@ -247,24 +302,34 @@ function ProductModal({ product, onSave, onClose }: {
           <h2 className="text-base font-black" style={{ color: CHARCOAL, fontFamily: "var(--font-playfair,'Poppins',system-ui,sans-serif)" }}>
             {isEdit ? "Edit Product" : "Add New Product"}
           </h2>
-          <button onClick={onClose} className="w-8 h-8 rounded-full flex items-center justify-center text-sm transition-colors hover:bg-gray-100" style={{ color: MUTED }}>✕</button>
+          <button onClick={onClose} className="w-8 h-8 rounded-full flex items-center justify-center text-sm transition-colors hover:bg-gray-100" style={{ color: MUTED }}><EmojiIcon emoji="✕" /></button>
         </div>
 
         <div className="p-6 space-y-5">
 
-          {/* Photos */}
+          {/* ── 1. Product Name (first, drives image suggestions) ──────── */}
+          <div>
+            <Input
+              label="Product Name *"
+              value={form.name}
+              onChange={(e: any) => set("name", e.target.value)}
+              placeholder="e.g. Apple iPhone 15 Pro Max 256GB"
+            />
+            {errors.name && <p className="text-xs text-red-500 mt-1">{errors.name}</p>}
+          </div>
+
+          {/* ── 2. Photos & Videos ─────────────────────────────────────── */}
           <div>
             <label className="block text-xs font-bold mb-2" style={{ color: CHARCOAL }}>
-              Product Photos <span style={{ color: MUTED }}>(up to 6 · first photo is the cover)</span>
+              Photos &amp; Videos <span style={{ color: MUTED }}>(up to 6 · first item is the cover)</span>
             </label>
 
             {/* Upload zone */}
             <div
-              role="button"
-              tabIndex={0}
+              role="button" tabIndex={0}
               onClick={() => !uploading && images.length < 6 && fileRef.current?.click()}
               onKeyDown={e => e.key === "Enter" && fileRef.current?.click()}
-              className="rounded-xl flex flex-col items-center justify-center gap-1.5 py-6 cursor-pointer transition-colors"
+              className="rounded-xl flex flex-col items-center justify-center gap-1.5 py-5 cursor-pointer transition-colors"
               style={{
                 border: `2px dashed ${BORDER}`,
                 backgroundColor: IVORY,
@@ -279,41 +344,46 @@ function ProductModal({ product, onSave, onClose }: {
                 </>
               ) : (
                 <>
-                  <span className="text-3xl">📷</span>
-                  <p className="text-sm font-bold" style={{ color: CHARCOAL }}>
-                    {images.length === 0 ? "Click to upload photos" : "Add more photos"}
+                  <span className="text-2xl"><EmojiIcon emoji="📷" /></span>
+                  <p className="text-xs font-bold" style={{ color: CHARCOAL }}>
+                    {images.length === 0 ? "Upload photos or videos" : `Upload more (${images.length}/6)`}
                   </p>
-                  <p className="text-xs" style={{ color: MUTED }}>JPG, PNG, WebP · max 10 MB each</p>
+                  <p className="text-[11px] text-center" style={{ color: MUTED }}>
+                    Images: JPG, PNG, WebP · max 10 MB
+                    <br />
+                    Videos: MP4, WebM, MOV · max 100 MB
+                  </p>
                 </>
               )}
             </div>
             <input
-              ref={fileRef}
-              type="file"
-              accept="image/jpeg,image/png,image/webp"
-              multiple
-              className="sr-only"
+              ref={fileRef} type="file" multiple className="sr-only"
+              accept="image/jpeg,image/png,image/webp,image/gif,video/mp4,video/webm,video/quicktime"
               onChange={e => e.target.files && handleFiles(e.target.files)}
             />
 
-            {/* Previews */}
+            {/* Selected media */}
             {images.length > 0 && (
               <div className="grid grid-cols-3 sm:grid-cols-6 gap-2 mt-3">
                 {images.map((img, i) => (
-                  <div key={img.publicId} className="relative aspect-square rounded-xl overflow-hidden group"
+                  <div key={img.url} className="relative aspect-square rounded-xl overflow-hidden group"
                     style={{ border: `2px solid ${i === 0 ? GOLD : BORDER}` }}>
-                    <Image src={img.url} alt="" fill sizes="80px" className="object-cover" />
+                    {img.mediaType === "video" ? (
+                      <>
+                        <video src={img.url} className="w-full h-full object-cover" muted playsInline />
+                        <span className="absolute top-1 left-1 bg-black/60 text-white text-[9px] font-bold px-1 py-0.5 rounded">
+                          VIDEO
+                        </span>
+                      </>
+                    ) : (
+                      <Image src={img.url} alt="" fill sizes="80px" className="object-cover" />
+                    )}
                     {i === 0 && (
                       <span className="absolute bottom-0 inset-x-0 text-[10px] font-bold text-center py-0.5 text-white"
-                        style={{ backgroundColor: "rgba(198,131,19,0.85)" }}>
-                        Cover
-                      </span>
+                        style={{ backgroundColor: "rgba(198,131,19,0.85)" }}>Cover</span>
                     )}
-                    <button
-                      type="button"
-                      onClick={() => removeImage(i)}
-                      className="absolute top-1 right-1 w-5 h-5 rounded-full bg-red-500 text-white text-xs flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
-                    >
+                    <button type="button" onClick={() => removeImage(i)}
+                      className="absolute top-1 right-1 w-5 h-5 rounded-full bg-red-500 text-white text-xs flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
                       ×
                     </button>
                   </div>
@@ -322,44 +392,90 @@ function ProductModal({ product, onSave, onClose }: {
             )}
           </div>
 
-          {/* Fallback emoji picker (shown when no photos uploaded) */}
+          {/* Fallback emoji — only when no photos */}
           {images.length === 0 && (
             <div>
               <label className="block text-xs font-bold mb-2" style={{ color: CHARCOAL }}>
-                Fallback Icon <span style={{ color: MUTED }}>(used when no photo is uploaded)</span>
+                Fallback Icon <span style={{ color: MUTED }}>(used when no photo selected)</span>
               </label>
               <div className="flex flex-wrap gap-2">
                 {EMOJIS.map(e => (
                   <button key={e} type="button" onClick={() => set("emoji", e)}
                     className="w-10 h-10 rounded-xl text-xl flex items-center justify-center transition-all"
                     style={{ backgroundColor: form.emoji === e ? IVORY : "#F9F9F9", border: `2px solid ${form.emoji === e ? GOLD : BORDER}` }}>
-                    {e}
+                    <EmojiText>{e}</EmojiText>
                   </button>
                 ))}
               </div>
             </div>
           )}
 
-          {/* Name */}
-          <div>
-            <Input label="Product Name *" value={form.name} onChange={(e: any) => set("name", e.target.value)} placeholder="e.g. Apple iPhone 16 Pro Max 256GB" />
-            {errors.name && <p className="text-xs text-red-500 mt-1">{errors.name}</p>}
-          </div>
-
-          {/* Category + Badge */}
+          {/* ── 3. Category + Badge ────────────────────────────────────── */}
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-bold mb-1" style={{ color: CHARCOAL }}>Category *</label>
-              <select
-                value={form.categoryId}
-                onChange={e => {
-                  const cat = categories.find(c => c.id === e.target.value);
-                  set("categoryId", e.target.value);
-                  if (cat) set("categoryName", cat.name);
-                }}
+              {/* Label row */}
+              <div className="flex items-center justify-between mb-1">
+                <div className="flex items-center gap-1.5">
+                  <label className="text-xs font-bold" style={{ color: CHARCOAL }}>Category *</label>
+                  {classifying && (
+                    <span className="flex items-center gap-1 text-[10px] font-semibold" style={{ color: GOLD }}>
+                      <span className="w-2.5 h-2.5 border border-t-transparent rounded-full animate-spin inline-block" style={{ borderColor: GOLD }} />
+                      AI classifying…
+                    </span>
+                  )}
+                </div>
+                <button
+                  type="button"
+                  onClick={() => { setNewCatOpen(o => !o); setNewCatName(""); setNewCatIcon(""); setNewCatError(""); }}
+                  className="flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-lg transition-all"
+                  style={{ backgroundColor: newCatOpen ? GOLD : IVORY, color: newCatOpen ? "#fff" : GOLD, border: `1px solid ${GOLD}` }}
+                >
+                  <EmojiText>{newCatOpen ? "✕ Cancel" : "+ New"}</EmojiText>
+                </button>
+              </div>
+
+              {/* Inline create-category form */}
+              {newCatOpen && (
+                <div className="mb-2 rounded-xl p-3 space-y-2" style={{ backgroundColor: "#FFFBF0", border: `1.5px solid ${GOLD}55` }}>
+                  <p className="text-[11px] font-black uppercase tracking-wide" style={{ color: GOLD }}>New Category</p>
+                  <div className="flex gap-2">
+                    <input
+                      value={newCatName}
+                      onChange={e => setNewCatName(e.target.value)}
+                      onKeyDown={async e => { if (e.key === "Enter") { e.preventDefault(); await createCategory(); } }}
+                      placeholder="Category name…"
+                      className="flex-1 px-3 py-2 rounded-lg text-xs outline-none"
+                      style={{ border: `1.5px solid ${BORDER}`, color: CHARCOAL }}
+                      onFocus={e => e.target.style.borderColor = GOLD}
+                      onBlur={e => e.target.style.borderColor = BORDER}
+                    />
+                    <input
+                      value={newCatIcon}
+                      onChange={e => setNewCatIcon(e.target.value)}
+                      placeholder="🏷️"
+                      className="w-12 px-2 py-2 rounded-lg text-xs text-center outline-none"
+                      style={{ border: `1.5px solid ${BORDER}`, color: CHARCOAL }}
+                      onFocus={e => e.target.style.borderColor = GOLD}
+                      onBlur={e => e.target.style.borderColor = BORDER}
+                    />
+                  </div>
+                  {newCatError && <p className="text-[11px] text-red-500 font-semibold">{newCatError}</p>}
+                  <button
+                    type="button"
+                    onClick={createCategory}
+                    disabled={newCatSaving || !newCatName.trim()}
+                    className="w-full py-1.5 rounded-lg text-xs font-bold text-white transition-all disabled:opacity-50"
+                    style={{ backgroundColor: GOLD }}
+                  >
+                    {newCatSaving ? "Creating…" : "Create & Select"}
+                  </button>
+                </div>
+              )}
+
+              <select value={form.categoryId}
+                onChange={e => { const cat = categories.find(c => c.id === e.target.value); set("categoryId", e.target.value); if (cat) set("categoryName", cat.name); }}
                 className="w-full px-4 py-2.5 rounded-xl text-sm outline-none"
-                style={{ border: `1.5px solid ${errors.categoryId ? "#EF4444" : BORDER}`, color: CHARCOAL, backgroundColor: "white" }}
-              >
+                style={{ border: `1.5px solid ${errors.categoryId ? "#EF4444" : classifying ? GOLD : BORDER}`, color: CHARCOAL, backgroundColor: "white" }}>
                 <option value="" disabled>Select category</option>
                 {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
               </select>
@@ -376,7 +492,7 @@ function ProductModal({ product, onSave, onClose }: {
             </div>
           </div>
 
-          {/* Prices */}
+          {/* ── 4. Prices ──────────────────────────────────────────────── */}
           <div>
             <div className="grid grid-cols-2 gap-4">
               <div>
@@ -389,55 +505,51 @@ function ProductModal({ product, onSave, onClose }: {
             </div>
             {disc > 0 && (
               <div className="mt-2 px-4 py-2 rounded-xl text-xs font-bold" style={{ backgroundColor: IVORY, color: GOLD }}>
-                ✓ {disc}% discount applied — customers will see रू {form.comparePrice.toLocaleString()} crossed out
+                <EmojiIcon emoji="✓" /> {disc}% discount — customers will see रू {form.comparePrice.toLocaleString()} crossed out
               </div>
             )}
           </div>
 
-          {/* Stock */}
+          {/* ── 5. Stock ───────────────────────────────────────────────── */}
           <div>
-            <Input label="Stock Quantity *" type="number" value={form.stock || ""} onChange={(e: any) => set("stock", Number(e.target.value))} placeholder="0" />
+            <Input label="Stock Quantity *" type="number" step={1} min={0} value={form.stock || ""} onChange={(e: any) => set("stock", Number(e.target.value))} placeholder="0" />
             {errors.stock && <p className="text-xs text-red-500 mt-1">{errors.stock}</p>}
           </div>
 
-          {/* Description */}
+          {/* ── 6. Description ─────────────────────────────────────────── */}
           <div>
             <label className="block text-xs font-bold mb-1" style={{ color: CHARCOAL }}>
-              Product Description {!isEdit && <span style={{ color: "#EF4444" }}>*</span>}
+              Product Description {!isEdit && <span style={{ color: "#EF4444" }}>*</span>} {!isEdit && <span style={{ color: MUTED, fontWeight: "normal" }}>(min. 10 characters)</span>}
             </label>
             <textarea value={form.description} onChange={e => set("description", e.target.value)}
               placeholder="Describe your product — features, specifications, what's in the box..."
-              rows={3}
-              className="w-full px-4 py-2.5 rounded-xl text-sm outline-none resize-none transition-all"
+              rows={3} className="w-full px-4 py-2.5 rounded-xl text-sm outline-none resize-none transition-all"
               style={{ border: `1.5px solid ${errors.description ? "#EF4444" : BORDER}`, color: CHARCOAL }}
               onFocus={e => { e.target.style.borderColor = GOLD; e.target.style.boxShadow = `0 0 0 3px rgba(198,131,19,0.1)`; }}
               onBlur={e => { e.target.style.borderColor = errors.description ? "#EF4444" : BORDER; e.target.style.boxShadow = "none"; }} />
             {errors.description && <p className="text-xs text-red-500 mt-1">{errors.description}</p>}
           </div>
 
-          {/* Toggles */}
+          {/* ── 7. Toggles ─────────────────────────────────────────────── */}
           <div className="flex items-center gap-6">
             <Toggle label="🚚 Free Shipping" value={form.freeShipping} onChange={() => set("freeShipping", !form.freeShipping)} />
             <Toggle label="⚡ Flash Sale"    value={form.isFlashSale}  onChange={() => set("isFlashSale",  !form.isFlashSale)}  />
           </div>
 
-          {/* Status */}
+          {/* ── 8. Status ──────────────────────────────────────────────── */}
           <div>
             <label className="block text-xs font-bold mb-2" style={{ color: CHARCOAL }}>Listing Status</label>
             <div className="flex gap-2">
               {([["active","✓ Active — visible to shoppers"],["draft","◷ Draft — hidden from shoppers"]] as const).map(([s, label]) => (
                 <button key={s} type="button" onClick={() => set("status", s)}
                   className="flex-1 py-2 rounded-xl text-xs font-bold transition-all"
-                  style={form.status === s
-                    ? { backgroundColor: GOLD, color: "#fff" }
-                    : { backgroundColor: IVORY, color: MUTED, border: `1px solid ${BORDER}` }}>
-                  {label}
+                  style={form.status === s ? { backgroundColor: GOLD, color: "#fff" } : { backgroundColor: IVORY, color: MUTED, border: `1px solid ${BORDER}` }}>
+                  <EmojiText>{label}</EmojiText>
                 </button>
               ))}
             </div>
           </div>
 
-          {/* API-level error */}
           {errors._form && (
             <div className="px-4 py-3 rounded-xl text-xs font-semibold text-red-700 bg-red-50 border border-red-200">
               {errors._form}
@@ -466,6 +578,270 @@ function ProductModal({ product, onSave, onClose }: {
   );
 }
 
+function CategoriesTab({ showToast }: { showToast: (msg: string, type?: "success" | "error") => void }) {
+  const [categories, setCategories] = useState<any[]>([]);
+  const [loading, setLoading]       = useState(true);
+  const [form, setForm]             = useState({ name: "", icon: "", parentId: "" });
+  const [saving, setSaving]         = useState(false);
+  const [error, setError]           = useState("");
+  const [expandedId,   setExpandedId]   = useState<string | null>(null);
+  const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
+  const [deleting,      setDeleting]      = useState(false);
+
+  useEffect(() => {
+    fetch("/api/categories")
+      .then(r => r.ok ? r.json() : null)
+      .then(d => { if (d?.categories) setCategories(d.categories); })
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, []);
+
+  const handleCreate = async () => {
+    if (!form.name.trim()) { setError("Category name is required"); return; }
+    setSaving(true);
+    setError("");
+    try {
+      const res  = await fetch("/api/categories", {
+        method:  "POST",
+        headers: { "Content-Type": "application/json" },
+        body:    JSON.stringify({ name: form.name.trim(), icon: form.icon.trim() || null, parentId: form.parentId || null }),
+      });
+      const data = await res.json();
+      if (!res.ok) { setError(data.error ?? "Failed to create category"); return; }
+
+      const created = data.category;
+      if (form.parentId) {
+        setCategories(prev => prev.map(c =>
+          c.id === form.parentId
+            ? { ...c, children: [...(c.children ?? []), { ...created, _count: { products: 0 } }] }
+            : c
+        ));
+      } else {
+        setCategories(prev => [...prev, { ...created, children: [], _count: { products: 0 } }]
+          .sort((a, b) => a.name.localeCompare(b.name)));
+      }
+      setForm({ name: "", icon: "", parentId: "" });
+      showToast("Category created!");
+    } catch {
+      setError("Network error. Please try again.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const deleteCategory = async (id: string) => {
+    setDeleting(true);
+    try {
+      const res  = await fetch(`/api/categories/${id}`, { method: "DELETE" });
+      const data = await res.json();
+      if (!res.ok) { showToast(data.error ?? "Failed to delete category", "error"); return; }
+      setCategories(prev =>
+        prev
+          .filter(c => c.id !== id)
+          .map(c => ({ ...c, children: (c.children ?? []).filter((ch: any) => ch.id !== id) })),
+      );
+      showToast("Category deleted!");
+    } catch {
+      showToast("Network error. Please try again.", "error");
+    } finally {
+      setDeleting(false);
+      setDeleteConfirm(null);
+    }
+  };
+
+  return (
+    <div className="space-y-5">
+      <h2 className="font-black text-base" style={{ color: CHARCOAL }}>Categories</h2>
+
+      {/* ── Create form ── */}
+      <div className="bg-white rounded-2xl p-5 space-y-4" style={{ border: `1px solid ${BORDER}` }}>
+        <h3 className="font-bold text-sm" style={{ color: CHARCOAL }}>Add New Category</h3>
+
+        <div className="grid grid-cols-[1fr_80px] gap-3">
+          <div>
+            <label className="block text-xs font-bold mb-1" style={{ color: CHARCOAL }}>Category Name *</label>
+            <input
+              value={form.name}
+              onChange={e => setForm(p => ({ ...p, name: e.target.value }))}
+              onKeyDown={e => e.key === "Enter" && handleCreate()}
+              placeholder="e.g. Electronics, Clothing, Books…"
+              className="w-full px-4 py-2.5 rounded-xl text-sm outline-none transition-all"
+              style={{ border: `1.5px solid ${BORDER}`, color: CHARCOAL }}
+              onFocus={e => e.target.style.borderColor = GOLD}
+              onBlur={e => e.target.style.borderColor = BORDER}
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-bold mb-1" style={{ color: CHARCOAL }}>Icon</label>
+            <input
+              value={form.icon}
+              onChange={e => setForm(p => ({ ...p, icon: e.target.value }))}
+              placeholder="🛒"
+              className="w-full px-3 py-2.5 rounded-xl text-sm text-center outline-none transition-all"
+              style={{ border: `1.5px solid ${BORDER}`, color: CHARCOAL }}
+              onFocus={e => e.target.style.borderColor = GOLD}
+              onBlur={e => e.target.style.borderColor = BORDER}
+            />
+          </div>
+        </div>
+
+        <div>
+          <label className="block text-xs font-bold mb-1" style={{ color: CHARCOAL }}>
+            Parent Category <span style={{ color: MUTED }}>(leave empty for top-level)</span>
+          </label>
+          <select
+            value={form.parentId}
+            onChange={e => setForm(p => ({ ...p, parentId: e.target.value }))}
+            className="w-full px-4 py-2.5 rounded-xl text-sm outline-none"
+            style={{ border: `1.5px solid ${BORDER}`, color: CHARCOAL, backgroundColor: "white" }}
+          >
+            <option value="">— Top-level category —</option>
+            {categories.map(c => (
+              <option key={c.id} value={c.id}>{c.name}</option>
+            ))}
+          </select>
+        </div>
+
+        {error && <p className="text-xs font-semibold text-red-600">{error}</p>}
+
+        <button
+          onClick={handleCreate} disabled={saving}
+          className="w-full py-2.5 rounded-xl text-sm font-bold text-white transition-all disabled:opacity-60"
+          style={{ backgroundColor: GOLD }}
+          onMouseEnter={e => { if (!saving) e.currentTarget.style.backgroundColor = "#9B6210"; }}
+          onMouseLeave={e => { e.currentTarget.style.backgroundColor = GOLD; }}
+        >
+          {saving ? "Creating…" : "+ Create Category"}
+        </button>
+      </div>
+
+      {/* ── Category list ── */}
+      <div className="bg-white rounded-2xl overflow-hidden" style={{ border: `1px solid ${BORDER}` }}>
+        <div className="px-5 py-4" style={{ borderBottom: `1px solid ${BORDER}` }}>
+          <h3 className="font-bold text-sm" style={{ color: CHARCOAL }}>
+            All Categories <span className="font-normal text-xs" style={{ color: MUTED }}>({categories.length} top-level)</span>
+          </h3>
+        </div>
+
+        {loading ? (
+          <div className="p-10 flex items-center justify-center">
+            <div className="w-6 h-6 border-2 border-t-transparent rounded-full animate-spin" style={{ borderColor: GOLD }} />
+          </div>
+        ) : categories.length === 0 ? (
+          <div className="p-10 text-center">
+            <p className="text-sm" style={{ color: MUTED }}>No categories yet. Create the first one above.</p>
+          </div>
+        ) : (
+          <div className="divide-y" style={{ borderColor: BORDER }}>
+            {categories.map(cat => (
+              <div key={cat.id}>
+                {/* Top-level row */}
+                <div className="flex items-center transition-colors hover:bg-amber-50/50">
+                  <button
+                    onClick={() => setExpandedId(expandedId === cat.id ? null : cat.id)}
+                    className="flex-1 flex items-center gap-3 px-5 py-3.5 text-left min-w-0"
+                  >
+                    <span className="text-xl w-7 text-center shrink-0"><EmojiIcon emoji={cat.icon ?? "🏷️"} /></span>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-bold" style={{ color: CHARCOAL }}>{cat.name}</p>
+                      <p className="text-[11px]" style={{ color: MUTED }}>
+                        {cat._count?.products ?? 0} products
+                        {cat.children?.length > 0 && ` · ${cat.children.length} subcategories`}
+                      </p>
+                    </div>
+                    {cat.children?.length > 0 && (
+                      <span className="text-xs mr-2" style={{ color: MUTED }}>
+                        {expandedId === cat.id ? <EmojiIcon emoji={"▲"} /> : <EmojiIcon emoji={"▼"} />}
+                      </span>
+                    )}
+                  </button>
+
+                  {/* Delete controls */}
+                  <div className="pr-4 shrink-0">
+                    {deleteConfirm === cat.id ? (
+                      <div className="flex items-center gap-1.5">
+                        <button
+                          onClick={() => deleteCategory(cat.id)}
+                          disabled={deleting}
+                          className="px-2.5 py-1 text-[11px] font-bold rounded-lg bg-red-500 text-white disabled:opacity-50"
+                        >
+                          {deleting ? "…" : "Delete"}
+                        </button>
+                        <button
+                          onClick={() => setDeleteConfirm(null)}
+                          className="px-2 py-1 text-[11px] rounded-lg"
+                          style={{ backgroundColor: IVORY, color: MUTED, border: `1px solid ${BORDER}` }}
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    ) : (
+                      <button
+                        onClick={() => setDeleteConfirm(cat.id)}
+                        className="p-1.5 rounded-lg text-sm transition-colors"
+                        style={{ backgroundColor: "#FEF2F2", color: "#EF4444" }}
+                        title="Delete category"
+                      >
+                        <EmojiIcon emoji="🗑️" />
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+                {/* Subcategories */}
+                {expandedId === cat.id && cat.children?.length > 0 && (
+                  <div style={{ backgroundColor: IVORY }}>
+                    {cat.children.map((child: any) => (
+                      <div key={child.id} className="flex items-center gap-3 px-5 py-2.5 pl-14"
+                        style={{ borderTop: `1px solid ${BORDER}` }}>
+                        <span className="text-base w-5 text-center shrink-0"><EmojiIcon emoji={child.icon ?? "↳"} /></span>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-xs font-semibold" style={{ color: CHARCOAL }}>{child.name}</p>
+                          <p className="text-[11px]" style={{ color: MUTED }}>{child._count?.products ?? 0} products</p>
+                        </div>
+                        {/* Delete subcategory */}
+                        <div className="shrink-0">
+                          {deleteConfirm === child.id ? (
+                            <div className="flex items-center gap-1.5">
+                              <button
+                                onClick={() => deleteCategory(child.id)}
+                                disabled={deleting}
+                                className="px-2.5 py-1 text-[11px] font-bold rounded-lg bg-red-500 text-white disabled:opacity-50"
+                              >
+                                {deleting ? "…" : "Delete"}
+                              </button>
+                              <button
+                                onClick={() => setDeleteConfirm(null)}
+                                className="px-2 py-1 text-[11px] rounded-lg"
+                                style={{ backgroundColor: "#fff", color: MUTED, border: `1px solid ${BORDER}` }}
+                              >
+                                Cancel
+                              </button>
+                            </div>
+                          ) : (
+                            <button
+                              onClick={() => setDeleteConfirm(child.id)}
+                              className="p-1.5 rounded-lg text-sm transition-colors"
+                              style={{ backgroundColor: "#FEF2F2", color: "#EF4444" }}
+                              title="Delete subcategory"
+                            >
+                              <EmojiIcon emoji="🗑️" />
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 function StoreSettings({ user, showToast }: { user: any; showToast: any }) {
   const [store, setStore] = useState({
     name: user.name + "'s Store", description: "Quality products at great prices",
@@ -489,7 +865,7 @@ function StoreSettings({ user, showToast }: { user: any; showToast: any }) {
         </div>
         <div className="grid grid-cols-2 gap-4">
           <Input label="Contact Phone" value={store.phone} onChange={(e: any) => s("phone", e.target.value)} />
-          <Input label="Contact Email" type="email" value={store.email} onChange={(e: any) => s("email", e.target.value)} />
+          <Input label="Contact Email" type="email" value={store.email} onChange={(e: any) => s("email", e.target.value)} />``
         </div>
       </div>
       <div className="bg-white rounded-2xl p-6 space-y-4" style={{ border: `1px solid ${BORDER}` }}>
@@ -517,13 +893,14 @@ export function SellerDashPage() {
   const { nav, showToast } = useUIStore();
   const { user } = useAuthStore();
   const [tab, setTab]           = useState("overview");
-  const [products, setProducts] = useState<SellerProduct[]>(INITIAL_PRODUCTS);
+  const [products, setProducts] = useState<SellerProduct[]>([]);
+  const [productsLoading, setProductsLoading] = useState(true);
   const [orders, setOrders]     = useState<SellerOrder[]>(INITIAL_ORDERS);
   const [modal, setModal]       = useState<{ open: boolean; product: Partial<SellerProduct> | null }>({ open: false, product: null });
   const [orderFilter, setOrderFilter]   = useState("ALL");
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
   const [search, setSearch]     = useState("");
-  const [sellerProfile, setSellerProfile] = useState<{ storeName?: string; storeSlug?: string; status?: string } | null>(null);
+  const [sellerProfile, setSellerProfile] = useState<{ storeName?: string; storeSlug?: string; isVerified?: boolean } | null>(null);
 
   if (!user) { nav("login"); return null; }
 
@@ -535,6 +912,57 @@ export function SellerDashPage() {
       .then(d => { if (d?.seller) setSellerProfile(d.seller); })
       .catch(() => {});
   }, [user?.email]);
+
+  // eslint-disable-next-line react-hooks/rules-of-hooks
+  useEffect(() => {
+    if (!sellerProfile?.storeSlug) return;
+    setProductsLoading(true);
+    fetch(`/api/products?seller=${encodeURIComponent(sellerProfile.storeSlug)}&limit=100&sort=newest`)
+      .then(r => r.ok ? r.json() : null)
+      .then(d => {
+        if (!d?.products) return;
+        const mapped: SellerProduct[] = d.products.map((p: any) => ({
+          id:           p.id,
+          name:         p.name,
+          category:     p.category?.name ?? "",
+          emoji:        p.emoji ?? "🛍️",
+          basePrice:    Number(p.basePrice),
+          comparePrice: Number(p.comparePrice ?? 0),
+          stock:        p.stock,
+          description:  p.shortDesc ?? p.description ?? "",
+          freeShipping: p.freeShipping,
+          isFlashSale:  p.isFlashSale,
+          badge:        p.badge ?? "",
+          status:       p.isActive ? "active" : "draft",
+          imageUrl:     p.images?.[0]?.url,
+        }));
+        setProducts(mapped);
+      })
+      .catch(() => {})
+      .finally(() => setProductsLoading(false));
+  }, [sellerProfile?.storeSlug]);
+
+  // eslint-disable-next-line react-hooks/rules-of-hooks
+  useEffect(() => {
+    fetch("/api/seller/orders?limit=100")
+      .then(r => r.ok ? r.json() : null)
+      .then(d => {
+        if (!d?.orders?.length) return;
+        const mapped: SellerOrder[] = d.orders.map((o: any) => ({
+          id:            o.id,
+          orderNumber:   o.orderNumber,
+          customer:      o.user?.name  ?? "Customer",
+          customerEmail: o.user?.email ?? "",
+          product:       o.items.map((i: any) => i.product?.name ?? "Product").join(", "),
+          qty:           o.items.reduce((s: number, i: any) => s + i.quantity, 0),
+          total:         Number(o.total),
+          status:        o.status,
+          date:          new Date(o.createdAt).toISOString().slice(0, 10),
+        }));
+        setOrders(mapped);
+      })
+      .catch(() => {});
+  }, []);
 
   const filteredOrders = orders.filter(o =>
     (orderFilter === "ALL" || o.status === orderFilter) &&
@@ -560,12 +988,14 @@ export function SellerDashPage() {
   };
 
   const TABS = [
-    { id:"overview",  label:"Overview",       icon:"📊" },
-    { id:"products",  label:"My Products",    icon:"🛍️" },
-    { id:"orders",    label:"Orders",         icon:"📦" },
-    { id:"analytics", label:"Analytics",      icon:"📈" },
-    { id:"payouts",   label:"Payouts",        icon:"💰" },
-    { id:"settings",  label:"Store Settings", icon:"⚙️" },
+    { id:"overview",    label:"Overview",       icon:"📊" },
+    { id:"products",    label:"My Products",    icon:"🛍️" },
+    { id:"orders",      label:"Orders",         icon:"📦" },
+    { id:"customers",   label:"Customers",      icon:"👥" },
+    { id:"categories",  label:"Categories",     icon:"🏷️" },
+    { id:"analytics",   label:"Analytics",      icon:"📈" },
+    { id:"payouts",     label:"Payouts",        icon:"💰" },
+    { id:"settings",    label:"Store Settings", icon:"⚙️" },
   ];
 
   return (
@@ -581,13 +1011,10 @@ export function SellerDashPage() {
           </div>
           <div className="flex items-center gap-2">
             <button
-              onClick={() => {
-                if (sellerProfile?.storeSlug) nav("store", sellerProfile.storeSlug);
-                else showToast("Store slug loading — try again in a moment", "error");
-              }}
+              onClick={() => nav("store", sellerProfile?.storeSlug || user.email)}
               className="px-3 py-2 text-xs font-bold rounded-xl transition-all"
               style={{ border: `1px solid ${BORDER}`, color: MUTED }}>
-              🌐 View My Store
+              <EmojiIcon emoji="🌐" /> View My Store
             </button>
             <button onClick={() => setModal({ open: true, product: null })}
               className="px-4 py-2 text-xs font-bold text-white rounded-xl transition-all"
@@ -610,7 +1037,7 @@ export function SellerDashPage() {
                 <button key={t.id} onClick={() => setTab(t.id)}
                   className="flex items-center gap-3 w-full px-4 py-3 rounded-xl text-xs font-semibold transition-all mb-0.5 text-left"
                   style={tab === t.id ? { backgroundColor: IVORY, color: GOLD } : { color: MUTED }}>
-                  <span className="text-base">{t.icon}</span>{t.label}
+                  <span className="text-base"><EmojiIcon emoji={t.icon} /></span>{t.label}
                 </button>
               ))}
             </div>
@@ -632,10 +1059,10 @@ export function SellerDashPage() {
                   ].map(s => (
                     <div key={s.label} className="bg-white rounded-2xl p-4" style={{ border: `1px solid ${BORDER}` }}>
                       <div className="flex items-center justify-between mb-3">
-                        <span className="text-2xl">{s.icon}</span>
-                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full" style={{ backgroundColor: IVORY, color: MUTED }}>{s.sub}</span>
+                        <span className="text-2xl"><EmojiIcon emoji={s.icon} /></span>
+                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full" style={{ backgroundColor: IVORY, color: MUTED }}><EmojiText>{s.sub}</EmojiText></span>
                       </div>
-                      <p className="text-xl font-black" style={{ color: s.color }}>{s.value}</p>
+                      <p className="text-xl font-black" style={{ color: s.color }}><EmojiText>{s.value}</EmojiText></p>
                       <p className="text-[11px] mt-0.5" style={{ color: MUTED }}>{s.label}</p>
                     </div>
                   ))}
@@ -645,7 +1072,7 @@ export function SellerDashPage() {
                 <div className="bg-white rounded-2xl" style={{ border: `1px solid ${BORDER}` }}>
                   <div className="flex items-center justify-between px-5 py-4" style={{ borderBottom: `1px solid ${BORDER}` }}>
                     <h3 className="font-black text-sm" style={{ color: CHARCOAL }}>Recent Orders</h3>
-                    <button onClick={() => setTab("orders")} className="text-xs font-bold" style={{ color: GOLD }}>View all →</button>
+                    <button onClick={() => setTab("orders")} className="text-xs font-bold" style={{ color: GOLD }}>View all <EmojiIcon emoji="→" /></button>
                   </div>
                   {orders.slice(0,4).map((o, i) => (
                     <div key={o.id} className="flex items-center justify-between px-5 py-3"
@@ -662,6 +1089,32 @@ export function SellerDashPage() {
                   ))}
                 </div>
 
+                {/* View My Store banner */}
+                <div
+                  className="flex items-center justify-between gap-4 p-5 rounded-2xl"
+                  style={{ background: `linear-gradient(135deg, ${GOLD}22, #fff7e6)`, border: `1.5px solid ${GOLD}55` }}
+                >
+                  <div>
+                    <p className="font-black text-sm" style={{ color: CHARCOAL }}>
+                      <EmojiIcon emoji="🌐" /> {sellerProfile?.storeName ?? user.name + "'s Store"}
+                    </p>
+                    <p className="text-xs mt-0.5" style={{ color: MUTED }}>
+                      {sellerProfile?.storeSlug
+                        ? "Your public store page — customers can browse all your products here."
+                        : "Your application is under review. Store page will be live once approved."}
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => nav("store", sellerProfile?.storeSlug || user.email)}
+                    className="shrink-0 px-4 py-2 rounded-xl text-xs font-black text-white transition-all"
+                    style={{ backgroundColor: GOLD }}
+                    onMouseEnter={e => e.currentTarget.style.backgroundColor = "#9B6210"}
+                    onMouseLeave={e => e.currentTarget.style.backgroundColor = GOLD}
+                  >
+                    View My Store <EmojiIcon emoji="→" />
+                  </button>
+                </div>
+
                 {/* Quick actions */}
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                   {[
@@ -675,7 +1128,7 @@ export function SellerDashPage() {
                       style={{ border: `1px solid ${BORDER}`, color: CHARCOAL }}
                       onMouseEnter={e => { e.currentTarget.style.borderColor = GOLD; e.currentTarget.style.color = GOLD; e.currentTarget.style.transform = "translateY(-2px)"; }}
                       onMouseLeave={e => { e.currentTarget.style.borderColor = BORDER; e.currentTarget.style.color = CHARCOAL; e.currentTarget.style.transform = "none"; }}>
-                      <span className="text-2xl">{a.i}</span>{a.l}
+                      <span className="text-2xl"><EmojiText>{a.i}</EmojiText></span>{a.l}
                     </button>
                   ))}
                 </div>
@@ -698,9 +1151,14 @@ export function SellerDashPage() {
                   </button>
                 </div>
 
-                {products.length === 0 ? (
+                {productsLoading ? (
                   <div className="bg-white rounded-2xl p-16 text-center" style={{ border: `1px solid ${BORDER}` }}>
-                    <div className="text-6xl mb-4">🛍️</div>
+                    <div className="w-8 h-8 border-2 border-t-transparent rounded-full animate-spin mx-auto mb-3" style={{ borderColor: GOLD }} />
+                    <p className="text-sm" style={{ color: MUTED }}>Loading your products…</p>
+                  </div>
+                ) : products.length === 0 ? (
+                  <div className="bg-white rounded-2xl p-16 text-center" style={{ border: `1px solid ${BORDER}` }}>
+                    <div className="text-6xl mb-4"><EmojiIcon emoji="🛍️" /></div>
                     <h3 className="font-black text-lg mb-2" style={{ color: CHARCOAL }}>No products yet</h3>
                     <p className="text-sm mb-5" style={{ color: MUTED }}>Add your first product to start selling on PeaNut</p>
                     <button onClick={() => setModal({ open: true, product: null })}
@@ -714,9 +1172,7 @@ export function SellerDashPage() {
                     {products.map(p => (
                       <div key={p.id} className="bg-white rounded-2xl p-4 flex items-center gap-4" style={{ border: `1px solid ${BORDER}` }}>
                         <div className="w-12 h-12 rounded-xl overflow-hidden shrink-0 flex items-center justify-center text-2xl" style={{ backgroundColor: IVORY }}>
-                          {p.imageUrl
-                            ? <Image src={p.imageUrl} alt={p.name} width={48} height={48} className="object-cover w-full h-full" />
-                            : p.emoji}
+                          {p.imageUrl ? <Image src={p.imageUrl} alt={p.name} width={48} height={48} className="object-cover w-full h-full" /> : <EmojiIcon emoji={p.emoji} />}
                         </div>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 flex-wrap mb-0.5">
@@ -729,11 +1185,11 @@ export function SellerDashPage() {
                                 {p.badge}
                               </span>
                             )}
-                            {p.isFlashSale && <span className="text-[10px] font-bold px-2 py-0.5 rounded-full text-white shrink-0 bg-orange-500">⚡ Flash</span>}
+                            {p.isFlashSale && <span className="text-[10px] font-bold px-2 py-0.5 rounded-full text-white shrink-0 bg-orange-500"><EmojiIcon emoji="⚡" /> Flash</span>}
                           </div>
                           <p className="text-[11px]" style={{ color: MUTED }}>
                             {p.category} · Stock: {p.stock}
-                            {p.freeShipping && " · 🚚 Free shipping"}
+                            <EmojiText>{p.freeShipping && " · 🚚 Free shipping"}</EmojiText>
                           </p>
                         </div>
                         <div className="text-right shrink-0">
@@ -795,14 +1251,14 @@ export function SellerDashPage() {
                       style={orderFilter === s
                         ? { backgroundColor: GOLD, color: "#fff" }
                         : { backgroundColor: IVORY, color: MUTED, border: `1px solid ${BORDER}` }}>
-                      {s}
+                      <EmojiText>{s}</EmojiText>
                     </button>
                   ))}
                 </div>
 
                 {filteredOrders.length === 0 ? (
                   <div className="bg-white rounded-2xl p-12 text-center" style={{ border: `1px solid ${BORDER}` }}>
-                    <div className="text-5xl mb-3">📦</div>
+                    <div className="text-5xl mb-3"><EmojiIcon emoji="📦" /></div>
                     <p className="font-bold" style={{ color: CHARCOAL }}>No orders found</p>
                   </div>
                 ) : (
@@ -843,6 +1299,89 @@ export function SellerDashPage() {
               </div>
             )}
 
+            {/* ── CUSTOMERS ── */}
+            {tab === "customers" && (() => {
+              // Group orders by customer email
+              const customerMap = new Map<string, { name: string; email: string; orders: SellerOrder[] }>();
+              for (const o of orders) {
+                const key = o.customerEmail || o.customer;
+                if (!customerMap.has(key)) customerMap.set(key, { name: o.customer, email: o.customerEmail, orders: [] });
+                customerMap.get(key)!.orders.push(o);
+              }
+              const customers = [...customerMap.values()].sort((a, b) =>
+                b.orders.reduce((s, o) => s + o.total, 0) - a.orders.reduce((s, o) => s + o.total, 0)
+              );
+
+              return (
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <h2 className="font-black text-base" style={{ color: CHARCOAL }}>
+                      Customers <span className="text-sm font-normal" style={{ color: MUTED }}>({customers.length})</span>
+                    </h2>
+                    <p className="text-xs" style={{ color: MUTED }}>Customers who ordered from your store</p>
+                  </div>
+
+                  {customers.length === 0 ? (
+                    <div className="bg-white rounded-2xl p-16 text-center" style={{ border: `1px solid ${BORDER}` }}>
+                      <div className="text-6xl mb-4"><EmojiIcon emoji="👥" /></div>
+                      <h3 className="font-black text-lg mb-2" style={{ color: CHARCOAL }}>No customers yet</h3>
+                      <p className="text-sm" style={{ color: MUTED }}>Customers will appear here once they place orders</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      {customers.map(c => {
+                        const totalSpent   = c.orders.reduce((s, o) => s + o.total, 0);
+                        const pendingCount = c.orders.filter(o => o.status === "PENDING" || o.status === "PROCESSING").length;
+                        const initials     = c.name.split(" ").map(w => w[0]).join("").slice(0, 2).toUpperCase();
+
+                        return (
+                          <div key={c.email} className="bg-white rounded-2xl overflow-hidden" style={{ border: `1px solid ${BORDER}` }}>
+                            {/* Customer header */}
+                            <div className="flex items-center gap-4 px-5 py-4" style={{ borderBottom: `1px solid ${BORDER}` }}>
+                              <div className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-black text-white shrink-0"
+                                style={{ backgroundColor: GOLD }}>
+                                {initials}
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <p className="text-sm font-black truncate" style={{ color: CHARCOAL }}>{c.name}</p>
+                                <p className="text-xs truncate" style={{ color: MUTED }}>{c.email}</p>
+                              </div>
+                              <div className="text-right shrink-0">
+                                <p className="text-sm font-black" style={{ color: GOLD }}>{formatPrice(totalSpent)}</p>
+                                <p className="text-[11px]" style={{ color: MUTED }}>total spent · {c.orders.length} order{c.orders.length !== 1 ? "s" : ""}</p>
+                              </div>
+                              {pendingCount > 0 && (
+                                <span className="text-[10px] font-bold px-2 py-1 rounded-full bg-yellow-100 text-yellow-700 shrink-0">
+                                  {pendingCount} pending
+                                </span>
+                              )}
+                            </div>
+
+                            {/* Order list */}
+                            <div className="divide-y" style={{ borderColor: BORDER }}>
+                              {c.orders.map(o => (
+                                <div key={o.id} className="flex items-center justify-between px-5 py-3 gap-4">
+                                  <div className="flex-1 min-w-0">
+                                    <p className="text-xs font-bold" style={{ color: CHARCOAL }}>{o.orderNumber}</p>
+                                    <p className="text-[11px] truncate" style={{ color: MUTED }}>{o.product} × {o.qty}</p>
+                                    <p className="text-[11px]" style={{ color: MUTED }}>{o.date}</p>
+                                  </div>
+                                  <div className="text-right shrink-0">
+                                    <p className="text-xs font-black mb-1" style={{ color: GOLD }}>{formatPrice(o.total)}</p>
+                                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${STATUS_COLORS[o.status]}`}>{o.status}</span>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
+
             {/* ── ANALYTICS ── */}
             {tab === "analytics" && (
               <div className="space-y-5">
@@ -857,7 +1396,7 @@ export function SellerDashPage() {
                     <div key={s.l} className="bg-white rounded-2xl p-4 text-center" style={{ border: `1px solid ${BORDER}` }}>
                       <p className="text-lg font-black mb-1" style={{ color: GOLD }}>{s.v}</p>
                       <p className="text-xs font-semibold" style={{ color: CHARCOAL }}>{s.l}</p>
-                      <p className="text-[11px]" style={{ color: MUTED }}>{s.sub}</p>
+                      <p className="text-[11px]" style={{ color: MUTED }}><EmojiText>{s.sub}</EmojiText></p>
                     </div>
                   ))}
                 </div>
@@ -891,7 +1430,7 @@ export function SellerDashPage() {
                           style={{ backgroundColor: [GOLD,"#9B6210","#D4A63A"][i] }}>
                           {i + 1}
                         </span>
-                        <span className="text-xl">{p.emoji}</span>
+                        <span className="text-xl"><EmojiIcon emoji={p.emoji} /></span>
                         <div className="flex-1 min-w-0">
                           <p className="text-xs font-bold truncate mb-1" style={{ color: CHARCOAL }}>{p.name}</p>
                           <div className="w-full h-1.5 rounded-full" style={{ backgroundColor: IVORY }}>
@@ -954,6 +1493,9 @@ export function SellerDashPage() {
                 </div>
               </div>
             )}
+
+            {/* ── CATEGORIES ── */}
+            {tab === "categories" && <CategoriesTab showToast={showToast} />}
 
             {/* ── SETTINGS ── */}
             {tab === "settings" && <StoreSettings user={user} showToast={showToast} />}

@@ -43,6 +43,7 @@ import {
 import { cn, formatPrice, timeAgo } from "@/app/lib/utils";
 import { toast } from "react-hot-toast";
 
+import { EmojiIcon, EmojiText } from "@/app/components/ui/EmojiIcon";
 const NAV = [
  {
  id: "profile",
@@ -225,7 +226,7 @@ export default function ProfilePage() {
  tierColors[profile.loyaltyTier ?? "BRONZE"],
  )}
  >
- {tierEmojis[profile.loyaltyTier ?? "BRONZE"]}{" "}
+ <EmojiText>{tierEmojis[profile.loyaltyTier ?? "BRONZE"]}</EmojiText>{" "}
  {profile.loyaltyTier}
  </span>
  {profile.emailVerified && (
@@ -302,7 +303,7 @@ export default function ProfilePage() {
  activeTab === item.id ? "text-blue-600" : "text-gray-400"
  }
  >
- {item.icon}
+ <EmojiIcon emoji={item.icon} />
  </span>
  <span className="flex-1">{item.label}</span>
  <ChevronRight

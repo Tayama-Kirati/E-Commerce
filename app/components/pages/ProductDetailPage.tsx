@@ -1,9 +1,10 @@
 "use client";
 import { useState, useEffect } from "react";
 import Image from "next/image";
-import { formatPrice, cn, useCartStore, useUIStore, useWishlistStore, apiGet } from "@/app/lib/store";
+import { formatPrice, cn, useCartStore, useUIStore, useWishlistStore, useAuthStore, apiGet, MOCK_PRODUCTS } from "@/app/lib/store";
 import { ProductCard } from "./ProductCard";
 
+import { EmojiIcon, EmojiText } from "@/app/components/ui/EmojiIcon";
 const GOLD = "#C68313";
 
 const FALLBACK_REVIEWS = [
@@ -52,8 +53,18 @@ export function ProductDetailPage() {
   apiGet(`/api/products/${pageData}`, null)
    .then((d) => {
     if (d?.product) {
-     setProduct(d.product);
-     setRelated(d.related ?? []);
+      setProduct(d.product);
+      setRelated(d.related ?? []);
+    } else {
+      // Fall back to mock data
+      const mock = MOCK_PRODUCTS.find((p: any) => p.slug === pageData || p.id === pageData);
+      if (mock) {
+        setProduct(mock);
+        const rel = MOCK_PRODUCTS
+          .filter((p: any) => p.id !== mock.id && p.category?.slug === mock.category?.slug)
+          .slice(0, 4);
+        setRelated(rel);
+      }
     }
    })
    .finally(() => setLoading(false));
@@ -62,7 +73,7 @@ export function ProductDetailPage() {
  if (loading) return <Skeleton />;
  if (!product) return (
   <div className="max-w-7xl mx-auto px-4 py-24 text-center">
-   <p className="text-5xl mb-4">😕</p>
+   <p className="text-5xl mb-4"><EmojiIcon emoji="😕" /></p>
    <h2 className="text-xl font-black text-gray-900 dark:text-white mb-2">Product not found</h2>
    <button onClick={() => nav("products")} className="mt-4 px-6 py-3 rounded-xl font-bold text-white" style={{ backgroundColor: GOLD }}>
     Back to Shop
@@ -92,10 +103,21 @@ export function ProductDetailPage() {
    {/* Shop banner */}
    <div className="bg-gray-100 dark:bg-gray-900 py-10 text-center">
     <h1 className="text-3xl font-black text-gray-900 dark:text-white mb-2">Shop</h1>
-    <nav className="flex items-center justify-center gap-2 text-sm text-gray-400">
+    <nav className="flex items-center justify-center gap-2 text-sm text-gray-400 flex-wrap">
      <button onClick={() => nav("home")} className="hover:text-[#C68313] transition-colors">Home</button>
      <span>/</span>
      <button onClick={() => nav("products")} className="hover:text-[#C68313] transition-colors">Shop</button>
+     {product.category?.name && (
+      <>
+       <span>/</span>
+       <button
+        onClick={() => nav("products", { category: product.category.slug })}
+        className="hover:text-[#C68313] transition-colors"
+       >
+        {product.category.name}
+       </button>
+      </>
+     )}
      <span>/</span>
      <span className="text-gray-600 dark:text-gray-300 truncate max-w-xs">{product.name}</span>
     </nav>
@@ -117,7 +139,7 @@ export function ProductDetailPage() {
          className="object-contain"
         />
        ) : (
-        <span className="text-9xl">{product.emoji ?? "🛍️"}</span>
+        <span className="text-9xl"><EmojiIcon emoji={product.emoji ?? "🛍️"} /></span>
        )}
        {images.length > 1 && (
         <>
@@ -155,7 +177,7 @@ export function ProductDetailPage() {
            <Image src={img.url} alt={img.alt ?? ""} fill sizes="80px" className="object-cover" />
           </div>
          ) : (
-          <span className="text-3xl">{product.emoji ?? "🛍️"}</span>
+          <span className="text-3xl"><EmojiIcon emoji={product.emoji ?? "🛍️"} /></span>
          )}
         </button>
        ))}
@@ -179,7 +201,7 @@ export function ProductDetailPage() {
       </div>
 
       <div className="flex items-center gap-2">
-       <span className="text-amber-400">{"★".repeat(Math.min(5, Math.round(Number(rating))))}</span>
+       <span className="text-amber-400"><EmojiText>{"★".repeat(Math.min(5, Math.round(Number(rating))))}</EmojiText></span>
        <span className="text-sm font-bold text-gray-900 dark:text-white">{rating}</span>
        <span className="text-sm text-gray-400">({reviewCount.toLocaleString()} Review)</span>
       </div>
@@ -317,10 +339,11 @@ export function ProductDetailPage() {
               : "border-gray-300 dark:border-gray-600 text-gray-400 hover:border-red-300 hover:text-red-400",
             )}
            >
-            ♥
+            <EmojiIcon emoji="♥" />
            </button>
           </div>
          )}
+         {effectiveStock <= 0 && <NotifyMe slug={product.slug ?? product.id} />}
         </div>
        );
       })()}
@@ -355,7 +378,7 @@ export function ProductDetailPage() {
            : "border-gray-300 dark:border-gray-600 text-gray-400 hover:border-red-300 hover:text-red-400",
          )}
         >
-         ♥
+         <EmojiIcon emoji="♥" />
         </button>
        </div>
       )}
@@ -364,18 +387,18 @@ export function ProductDetailPage() {
       {product.seller && (
        <div className="flex items-center justify-between gap-3 p-3 rounded-2xl border border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-800/50">
         <div className="flex items-center gap-3 min-w-0">
-         <div className="w-9 h-9 rounded-xl bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center text-lg shrink-0">🏪</div>
+         <div className="w-9 h-9 rounded-xl bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center text-lg shrink-0"><EmojiIcon emoji="🏪" /></div>
          <div className="min-w-0">
           <p className="text-xs text-gray-400">Sold by</p>
           <p className="text-sm font-black text-gray-900 dark:text-white truncate">{product.seller.storeName}</p>
-          {product.seller.isVerified && <p className="text-[10px] text-blue-500 font-semibold">✓ Verified Seller</p>}
+          {product.seller.isVerified && <p className="text-[10px] text-blue-500 font-semibold"><EmojiIcon emoji="✓" /> Verified Seller</p>}
          </div>
         </div>
         <button
          onClick={() => nav("store", product.seller.storeSlug)}
          className="shrink-0 px-3 py-1.5 rounded-xl text-xs font-bold border border-[#C68313] text-[#C68313] hover:bg-[#C68313] hover:text-white transition-colors"
         >
-         View Store →
+         View Store <EmojiIcon emoji="→" />
         </button>
        </div>
       )}
@@ -390,7 +413,7 @@ export function ProductDetailPage() {
         <span className="font-semibold text-gray-700 dark:text-gray-300">Share :</span>
         {["f", "𝕏", "p", "in"].map((icon) => (
          <button key={icon} className="w-7 h-7 rounded-full bg-gray-200 dark:bg-gray-700 text-xs font-bold text-gray-600 dark:text-gray-400 flex items-center justify-center hover:bg-[#C68313] hover:text-white transition-colors">
-          {icon}
+          <EmojiIcon emoji={icon} />
          </button>
         ))}
        </div>
@@ -419,7 +442,7 @@ export function ProductDetailPage() {
 
      {tab === "description" && (
       <div className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed space-y-3 max-w-3xl">
-       <p>{product.description ?? product.shortDesc ?? "No description available."}</p>
+       <p>{product.description ?? product.shortDesc ?? `${product.name} — a top-rated ${product.category?.name ?? "product"} from ${product.seller?.storeName ?? "our store"}. Crafted for quality and performance, it comes with ${(product.stock ?? 0) > 0 ? `${product.stock} units` : "limited stock"} available. Rated ${product.rating ?? product.averageRating ?? 4.5} out of 5 by ${(product.totalReviews ?? 0).toLocaleString()} customers.`}</p>
       </div>
      )}
 
@@ -445,7 +468,7 @@ export function ProductDetailPage() {
         <div className="text-center shrink-0">
          <p className="text-6xl font-black text-gray-900 dark:text-white">{rating}</p>
          <p className="text-xs text-gray-400 mt-1">out of 5</p>
-         <p className="text-amber-400 text-xl mt-1">{"★".repeat(Math.min(5, Math.round(Number(rating))))}</p>
+         <p className="text-amber-400 text-xl mt-1"><EmojiText>{"★".repeat(Math.min(5, Math.round(Number(rating))))}</EmojiText></p>
          <p className="text-xs text-gray-400 mt-1">({reviewCount.toLocaleString()} Review)</p>
         </div>
         <div className="flex-1 space-y-2.5">
@@ -501,7 +524,7 @@ export function ProductDetailPage() {
               </div>
               <span className="text-xs text-gray-400">{dateStr}</span>
              </div>
-             <p className="text-amber-400 text-sm mt-1">{"★".repeat(r.rating)}</p>
+             <p className="text-amber-400 text-sm mt-1"><EmojiText>{"★".repeat(r.rating)}</EmojiText></p>
              {r.title && <p className="text-sm font-semibold text-gray-800 dark:text-gray-200 mt-1">{r.title}</p>}
              <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">{r.body ?? r.text}</p>
             </div>
@@ -525,5 +548,42 @@ export function ProductDetailPage() {
     )}
    </div>
   </div>
+ );
+}
+
+
+// "Email me when it's back" for sold-out products
+function NotifyMe({ slug }: { slug: string }) {
+ const { user } = useAuthStore();
+ const { showToast } = useUIStore();
+ const [email, setEmail] = useState("");
+ const [done, setDone] = useState(false);
+ const [busy, setBusy] = useState(false);
+
+ const subscribe = async (e: React.FormEvent) => {
+  e.preventDefault();
+  setBusy(true);
+  const res = await fetch(`/api/products/${encodeURIComponent(slug)}/notify-me`, {
+   method: "POST",
+   headers: { "Content-Type": "application/json" },
+   body: JSON.stringify(user ? {} : { email }),
+  });
+  const data = await res.json().catch(() => ({}));
+  setBusy(false);
+  if (res.ok) { setDone(true); showToast(data.message ?? "We'll let you know!"); }
+  else showToast(data.error ?? "Could not subscribe", "error");
+ };
+
+ if (done) return <p className="text-sm font-semibold text-green-600">We&apos;ll email you when it&apos;s back in stock.</p>;
+ return (
+  <form onSubmit={subscribe} className="flex items-center gap-2 flex-wrap">
+   {!user && (
+    <input type="email" required value={email} onChange={e => setEmail(e.target.value)} placeholder="you@example.com"
+     className="flex-1 min-w-48 px-4 py-3 rounded-full border border-gray-300 dark:border-gray-600 bg-transparent text-sm" />
+   )}
+   <button type="submit" disabled={busy} className="px-6 py-3 font-bold rounded-full text-white bg-[#2D3748] dark:bg-gray-700 hover:opacity-90 disabled:opacity-60">
+    {busy ? "Saving…" : "Notify me when available"}
+   </button>
+  </form>
  );
 }

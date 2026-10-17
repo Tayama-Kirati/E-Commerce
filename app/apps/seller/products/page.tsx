@@ -6,6 +6,7 @@ import Image from "next/image";
 import { Plus, Package, Eye, EyeOff } from "lucide-react";
 import { toast } from "react-hot-toast";
 
+import { EmojiIcon } from "@/app/components/ui/EmojiIcon";
 type Product = {
  id: string;
  name: string;
@@ -67,7 +68,7 @@ export default function SellerProductsPage() {
  <div className="w-16 h-16 rounded-xl overflow-hidden bg-gray-50 dark:bg-gray-800 shrink-0">
  {p.images[0] ? (
  <Image src={p.images[0].url} alt={p.name} width={64} height={64} className="w-full h-full object-cover" />
- ) : <div className="w-full h-full flex items-center justify-center text-2xl">🛍️</div>}
+ ) : <div className="w-full h-full flex items-center justify-center text-2xl"><EmojiIcon emoji="🛍️" /></div>}
  </div>
  <div className="flex-1 min-w-0">
  <p className="font-semibold text-gray-900 dark:text-white truncate">{p.name}</p>
